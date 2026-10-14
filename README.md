@@ -2,7 +2,7 @@
 
 Version 0.1. Your Trood work, from Claude: your Product Engine projects with their stages and payments, the goals and decisions recorded for your company and projects, project messages and updates, and the public Technology Tree.
 
-It runs on your computer and speaks to Claude Desktop or Claude Code over stdio. User manual: trood-brain `products/trood-platform-manual.html`, published as a page.
+It runs on your computer and speaks to Claude Desktop or Claude Code over stdio. User manual (the whole platform, and this MCP): https://claude.ai/artifact/H88uCbMjWqs1aRWSPFxmU4
 
 ## Install
 
