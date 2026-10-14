@@ -58,6 +58,13 @@ Your Trood work:
 | `add_project_context` | Records a goal, decision or principle |
 | `search_tree`, `get_technology` | The public Technology Tree; no sign-in needed |
 
+Analytics, for Trood admins only (anyone else gets "you do not have access"):
+
+| Tool | What it does |
+|---|---|
+| `get_traffic` | Every Trood site, from first-party analytics: visits, page views, sources, top pages, named steps, devices, a funnel per site, the latest events. A visit is one visitor on one day; no cookies, nothing that identifies a person. `days`, `product` |
+| `get_user_activity` | Signed-in activity: users, new and active, event counts, engagement, activity per day, weekly retention. `days`, `weeks` |
+
 Never through this MCP: sending anything to a company or customer, approving, paying, granting or revoking access, changing rules, or moving a project's state. Contact details and payment links are removed before Engine results reach the model.
 
 Where research lives: `~/.trood/companies/<domain>.json` and `<domain>.brief.md`, readable by you only. Nobody else, Trood included, sees which companies you researched or what you inferred. Website fetching refuses local and private addresses, follows at most three redirects, and caps size and time (ported from Growth's page probe).
