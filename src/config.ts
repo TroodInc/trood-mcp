@@ -7,5 +7,6 @@ export const config = {
   engineUrl: process.env.TROOD_ENGINE_URL ?? 'https://trood-productengine-back-test.up.railway.app',
   treeUrl: process.env.TROOD_TREE_URL ?? 'https://trood-tree-back-test.up.railway.app',
   sessionFile: process.env.TROOD_SESSION_FILE ?? join(homedir(), '.trood', 'mcp-session.json'),
+  companiesDir: process.env.TROOD_COMPANIES_DIR ?? join(homedir(), '.trood', 'companies'),
   timeoutMs: 15000,
 };

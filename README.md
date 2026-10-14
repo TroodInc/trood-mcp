@@ -1,6 +1,8 @@
 # Trood MCP
 
-Version 0.1. Your Trood work, from Claude: your Product Engine projects with their stages and payments, the goals and decisions recorded for your company and projects, project messages and updates, and the public Technology Tree.
+Version 0.2. Research a company and prepare a precise offer for it with your own Claude, on your own tokens: read its website, see what it runs on, record facts with their sources, match catalog options, draft the brief, and publish it as a private link. Trood pays for no model calls; the research stays on your computer.
+
+It also reads your Trood work: your Product Engine projects with their stages and payments, the goals and decisions recorded for your company and projects, project messages and updates, and the public Technology Tree.
 
 It runs on your computer and speaks to Claude Desktop or Claude Code over stdio. User manual (the whole platform, and this MCP): https://claude.ai/artifact/H88uCbMjWqs1aRWSPFxmU4
 
@@ -30,6 +32,19 @@ Claude Desktop, in `claude_desktop_config.json`:
 
 ## Tools
 
+Research and offers:
+
+| Tool | What it does |
+|---|---|
+| `research_company` | Reads a company's website (home page and up to three of its own pages), detects booking engine, sales channels, guest messaging, website system, payments; records them as facts with their source page; returns the page text for your model to read, labelled untrusted |
+| `add_fact` | Records a fact with the page it came from. Only facts from pages that were read; nothing about people (names, emails, phone numbers are refused) |
+| `get_catalog` | The options an offer is built from. Templates so far: hotels and retreats; prices are placeholders you set |
+| `list_companies`, `get_company` | What you researched, with suggested options (by rule, no model) |
+| `draft_offer` | Writes the brief: headline, what you heard, chosen facts with sources, options with your prices. Saved locally; nothing is sent |
+| `publish_offer` | After the person approves the brief (`confirm: true`): a Product Engine draft project with one stage per option and a private link, valid 30 days. Needs a Trood operator account; a Partner sends the saved brief instead |
+
+Your Trood work:
+
 | Tool | What it does |
 |---|---|
 | `trood_whoami` | Who you are on Trood, and your roles |
@@ -40,10 +55,12 @@ Claude Desktop, in `claude_desktop_config.json`:
 | `get_project_messages` | The project's thread |
 | `get_updates` | What happened recently across your projects |
 | `get_project_topology` | What the project is built from (Ontop) |
-| `add_project_context` | Records a goal, decision or principle. The only write |
+| `add_project_context` | Records a goal, decision or principle |
 | `search_tree`, `get_technology` | The public Technology Tree; no sign-in needed |
 
-Never through this MCP: sending messages, approving, paying, granting or revoking access, changing rules, or moving a project's state. Contact details and payment links are removed before results reach the model.
+Never through this MCP: sending anything to a company or customer, approving, paying, granting or revoking access, changing rules, or moving a project's state. Contact details and payment links are removed before Engine results reach the model.
+
+Where research lives: `~/.trood/companies/<domain>.json` and `<domain>.brief.md`, readable by you only. Nobody else, Trood included, sees which companies you researched or what you inferred. Website fetching refuses local and private addresses, follows at most three redirects, and caps size and time (ported from Growth's page probe).
 
 ## How it is built
 
@@ -57,10 +74,12 @@ Never through this MCP: sending messages, approving, paying, granting or revokin
 npm run build && npm run check
 ```
 
-Runs the server under the SDK's own client: 24 checks against a local Product Engine stub (tools, the one write, redaction, sessions), plus the live Technology Tree and a live Product Engine refusal.
+Runs the server under the SDK's own client: 46 checks. A fixture website ("Sample Retreat", with an injected instruction in its text) and a local Product Engine stub cover research, facts, privacy refusals, the brief, publishing and a Partner's 403; live calls cover the Technology Tree, a public website and a Product Engine refusal.
 
 ## Not yet
 
 - A hosted connector for claude.ai needs OAuth in front of Trood's login; Kratos alone does not provide it.
-- Offer prefill for Partners (`draft_offer`, `add_fact`, `get_catalog`) needs the platform's own store for offers and facts, which does not exist yet.
+- The shared facts cache (one company researched once, across providers) needs the platform's server; today each provider's research is their own.
+- Providers' own catalogs: the catalog is Trood's hotel templates until the platform stores providers' catalogs.
+- `run_trood_analysis`, Trood's paid analysis for Pro, is not built.
 - Outside providers: Product Engine's operator role sees every project, so v0.1 is for Trood's own team until operators are scoped to their own projects.

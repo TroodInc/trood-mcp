@@ -1,7 +1,9 @@
 import { config } from './config.js';
 import { readSession } from './session.js';
 
-export class TroodError extends Error {}
+export class TroodError extends Error {
+  constructor(message: string, readonly status?: number) { super(message); }
+}
 
 const NO_SESSION =
   'You are not signed in to Trood. Run `trood-mcp login` in a terminal, then try again.';
@@ -24,7 +26,7 @@ async function call(base: string, path: string, init: RequestInit & { auth?: boo
     throw new TroodError(`Could not reach ${new URL(base).host}: ${(err as Error).message}`);
   }
   if (res.status === 401) throw new TroodError(init.auth ? EXPIRED : 'Not authorised.');
-  if (res.status === 403) throw new TroodError('Trood says you do not have access to that.');
+  if (res.status === 403) throw new TroodError('Trood says you do not have access to that.', 403);
   if (res.status === 404) throw new TroodError('Not found.');
   if (res.status === 204) return null;
   const text = await res.text();

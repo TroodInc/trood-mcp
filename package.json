@@ -1,7 +1,7 @@
 {
   "name": "@trood/mcp",
-  "version": "0.1.0",
-  "description": "Trood MCP server: your Product Engine projects, their goals and decisions, and the Technology Tree, from Claude",
+  "version": "0.2.0",
+  "description": "Trood MCP server: research a company, record facts with sources, draft and publish an offer with your own model; plus your Product Engine projects and the Technology Tree",
   "type": "module",
   "bin": {
     "trood-mcp": "dist/cli.js"
