@@ -1,5 +1,5 @@
 // End-to-end check of the Trood MCP with the SDK's own client over stdio.
-// Product Engine is a local stub (no real session needed); the Technology Tree is called for real.
+// Product Engine and the platform API are a local stub (no real session needed); the Technology Tree is called for real.
 //   npm run build && npm run check
 import { createServer } from 'node:http';
 import { mkdtempSync, writeFileSync, rmSync, statSync } from 'node:fs';
@@ -21,7 +21,12 @@ const stub = createServer((req, res) => {
   if (auth !== 'Bearer good-token' && auth !== 'Bearer partner-token') return send(401, { message: 'Unauthorized' });
   const url = new URL(req.url, 'http://x');
   const p = url.pathname;
-  if (p === '/users/me') return send(200, { id: 'u1', name: 'Sergey', email: 'sergey@example.com', roles: ['operator', 'admin'] });
+  if (p === '/users/me') return send(200, auth === 'Bearer partner-token' ? { id: 'u2', name: 'Ana', email: 'ana@example.com', roles: ['customer'] } : { id: 'u1', name: 'Sergey', email: 'sergey@example.com', roles: ['operator', 'admin'] });
+  // The platform API (offers).
+  if (p === '/provider' && req.method === 'POST') return auth === 'Bearer good-token' ? send(200, { workspaceId: 'pw' }) : send(403, { message: 'Forbidden' });
+  if (p === '/workspaces/pw/offers' && req.method === 'POST') { let b = ''; req.on('data', (c) => (b += c)); req.on('end', () => { posted.push({ offer: JSON.parse(b) }); send(201, { token: 'offer-token', link: 'https://platform.trood.com/d/offer-token' }); }); return; }
+  if (p === '/offers/submit' && req.method === 'POST') { let b = ''; req.on('data', (c) => (b += c)); req.on('end', () => { posted.push({ submit: JSON.parse(b) }); send(201, { status: 'review', message: 'Sent to Trood. When we create the link, we email it to you to send.' }); }); return; }
+  if (p === '/offers/mine') return send(200, { offers: [{ companyName: 'Sample Retreat', headline: 'Answering every guest in minutes at Sample Retreat', status: 'review', link: null }] });
   if (p === '/projects') return send(200, { projects: [{ id: 'p1', title: 'Sample Retreat answers', status: 'in_progress', contactEmail: 'owner@example.com' }] });
   if (p === '/projects/p1') return send(200, { id: 'p1', title: 'Sample Retreat answers', status: 'in_progress', requestContact: { email: 'owner@example.com', phone: '+62 000' }, customer: { id: 'c1', name: 'Made', email: 'made@example.com' }, milestones: [{ id: 'm1', title: 'Answer flow', status: 'review', paymentAmount: 1000 }], payments: [{ id: 'pay1', type: 'milestone_upfront', status: 'paid', stripeCheckoutUrl: 'https://checkout.example/x' }] });
   if (p === '/projects/p1/context' && req.method === 'GET') return send(200, [{ id: 'e1', type: 'goal', text: 'Answer every guest within five minutes' }]);
@@ -68,7 +73,7 @@ async function connect(token, allowPrivate = true) {
   const transport = new StdioClientTransport({
     command: process.execPath,
     args: [join(here, '..', 'dist', 'cli.js')],
-    env: { ...process.env, TROOD_ENGINE_URL: engineUrl, TROOD_IDENTITY_URL: engineUrl, TROOD_SESSION_FILE: sessionFile, TROOD_SESSION_TOKEN: '', TROOD_COMPANIES_DIR: join(dir, 'companies'), ...(allowPrivate ? { TROOD_ALLOW_PRIVATE_FETCH: '1' } : {}) },
+    env: { ...process.env, TROOD_ENGINE_URL: engineUrl, TROOD_IDENTITY_URL: engineUrl, TROOD_PLATFORM_URL: engineUrl, TROOD_SESSION_FILE: sessionFile, TROOD_SESSION_TOKEN: '', TROOD_COMPANIES_DIR: join(dir, 'companies'), ...(allowPrivate ? { TROOD_ALLOW_PRIVATE_FETCH: '1' } : {}) },
   });
   const client = new Client({ name: 'check', version: '0' });
   await client.connect(transport);
@@ -79,7 +84,7 @@ const text = (r) => r.content.map((c) => c.text).join('\n');
 let client = await connect('good-token');
 const { tools } = await client.listTools();
 const names = tools.map((t) => t.name).sort();
-const expected = ['add_fact', 'add_project_context', 'draft_offer', 'get_catalog', 'get_company', 'get_company_context', 'get_project', 'get_project_context', 'get_project_messages', 'get_project_topology', 'get_technology', 'get_traffic', 'get_updates', 'get_user_activity', 'list_companies', 'list_projects', 'publish_offer', 'research_company', 'search_tree', 'trood_whoami'];
+const expected = ['add_fact', 'add_project_context', 'draft_offer', 'get_catalog', 'get_company', 'get_company_context', 'get_project', 'get_project_context', 'get_project_messages', 'get_project_topology', 'get_technology', 'get_traffic', 'get_updates', 'get_user_activity', 'list_companies', 'list_my_offers', 'list_projects', 'publish_offer', 'research_company', 'search_tree', 'trood_whoami'];
 expect('exactly the twenty tools', JSON.stringify(names) === JSON.stringify(expected), names.join(','));
 const writers = tools.filter((t) => t.annotations?.readOnlyHint !== true).map((t) => t.name);
 expect('writers are the research store, the offer and the one Engine context write', JSON.stringify(writers.sort()) === JSON.stringify(['add_fact', 'add_project_context', 'draft_offer', 'publish_offer', 'research_company']), writers.join(','));
@@ -131,9 +136,7 @@ expect('facts with an email or a named person are refused', email.isError === tr
 const catalog = await client.callTool({ name: 'get_catalog', arguments: {} });
 expect('catalog lists the hotel options with placeholder prices', /Inquiries answered/.test(text(catalog)) && /\[\$ from-to\]/.test(text(catalog)));
 const draftNoPrice = await client.callTool({ name: 'draft_offer', arguments: { company: siteUrl, headline: 'Answering every guest in minutes at Sample Retreat', heard: 'Your front desk answers in shifts, so replies slow down at night.', factIds: [factId, 'tech-whatsapp'], options: [{ id: 'inq' }, { id: 'list' }] } });
-expect('draft without prices is saved and asks for prices', !draftNoPrice.isError && /set a price for: inq, list/.test(text(draftNoPrice)) && /Nothing was sent/.test(text(draftNoPrice)), text(draftNoPrice).slice(-200));
-const pubNoPrice = await client.callTool({ name: 'publish_offer', arguments: { company: siteUrl, confirm: true } });
-expect('publishing without prices is refused', pubNoPrice.isError === true && posted.every((x) => !x.create), text(pubNoPrice));
+expect('a draft without prices is saved; Trood prices it from its list', !draftNoPrice.isError && /prices left blank here: inq, list/.test(text(draftNoPrice)) && /Trood prices the offer from its own price list/.test(text(draftNoPrice)) && /Nothing was sent/.test(text(draftNoPrice)), text(draftNoPrice).slice(-200));
 const fakeFact = await client.callTool({ name: 'draft_offer', arguments: { company: siteUrl, headline: 'X offer', heard: 'Something we heard.', factIds: ['made-up'], options: [{ id: 'inq', amount: 1000 }] } });
 expect('a brief cannot use unrecorded facts', fakeFact.isError === true, text(fakeFact));
 const draft = await client.callTool({ name: 'draft_offer', arguments: { company: siteUrl, headline: 'Answering every guest in minutes at Sample Retreat', heard: 'Your front desk answers in shifts, so replies slow down at night.', factIds: [factId, 'tech-whatsapp'], options: [{ id: 'inq', amount: 1200 }, { id: 'list', amount: 900 }], preparedBy: 'Trood' } });
@@ -141,12 +144,12 @@ expect('the brief shows facts with sources and prices', /Offers spa packages for
 const noConfirm = await client.callTool({ name: 'publish_offer', arguments: { company: siteUrl } });
 expect('publishing needs confirm: true', noConfirm.isError === true);
 const pub = await client.callTool({ name: 'publish_offer', arguments: { company: siteUrl, confirm: true } });
-const created = posted.find((x) => x.create); const ms = posted.find((x) => x.milestones);
-expect('publishing creates a draft project, its stages and a private link', !pub.isError && /proposal\/test-token/.test(text(pub)) && created?.create.title === 'Answering every guest in minutes at Sample Retreat' && ms?.milestones.length === 2 && ms.milestones[0].paymentAmount === 1200 && ms.milestones[0].effortBand === 'M', text(pub));
+const offer = posted.find((x) => x.offer)?.offer;
+expect('an operator publishes a Trood offer on the platform, with its link', !pub.isError && /\/d\/offer-token/.test(text(pub)) && offer?.headline === 'Answering every guest in minutes at Sample Retreat' && JSON.stringify(offer?.selected) === '["inq","list"]' && posted.every((x) => !x.create), text(pub));
 const again = await client.callTool({ name: 'publish_offer', arguments: { company: siteUrl, confirm: true } });
-expect('publishing twice returns the same link', /alreadyPublished/.test(text(again)) && posted.filter((x) => x.create).length === 1);
+expect('publishing twice returns the same link', /alreadyPublished/.test(text(again)) && posted.filter((x) => x.offer).length === 1);
 const companies = JSON.parse(text(await client.callTool({ name: 'list_companies', arguments: {} })));
-expect('list companies', companies.length === 1 && companies[0].published?.includes('test-token'), JSON.stringify(companies));
+expect('list companies', companies.length === 1 && companies[0].published?.includes('offer-token'), JSON.stringify(companies));
 const storeMode = statSync(join(dir, 'companies', '127.0.0.1.json')).mode & 0o777;
 expect('research is stored owner-only (0600)', storeMode === 0o600, storeMode.toString(8));
 
@@ -174,7 +177,10 @@ await client.callTool({ name: 'draft_offer', arguments: { company: siteUrl, head
 const partnerPub = await client.callTool({ name: 'publish_offer', arguments: { company: siteUrl, confirm: true } });
 const notAdmin = await client.callTool({ name: 'get_traffic', arguments: {} });
 expect('a non-admin is refused analytics cleanly', notAdmin.isError === true && /do not have access/.test(text(notAdmin)), text(notAdmin));
-expect('a Partner without operator access gets the saved brief path', partnerPub.isError === true && /operator account/.test(text(partnerPub)) && /brief\.md/.test(text(partnerPub)), text(partnerPub));
+const submitted = posted.find((x) => x.submit)?.submit;
+expect('a partner\'s offer goes to Trood to check, with their brief as notes', !partnerPub.isError && /sent to Trood to check/.test(text(partnerPub)) && /referral code/.test(text(partnerPub)) && JSON.stringify(submitted?.selected) === '["inq"]' && /Answering every guest/.test(submitted?.notes ?? '') && submitted?.via === 'mcp', text(partnerPub));
+const mine = await client.callTool({ name: 'list_my_offers', arguments: {} });
+expect('a partner sees where their offers stand', !mine.isError && /Sample Retreat/.test(text(mine)) && /review/.test(text(mine)), text(mine));
 await client.close();
 
 client = await connect('good-token', false);

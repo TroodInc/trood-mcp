@@ -36,7 +36,15 @@ export interface Company {
     draftedAt: string;
     brief: string;
   };
-  published?: { projectId: string; proposalUrl: string; publishedAt: string };
+  /**
+   * Where the offer went. Before 2026-10-16 an operator's offer was an Engine
+   * project with a proposal link; since then every offer goes to the platform:
+   * a link straight away for Trood's operators, or Trood's review for a partner.
+   */
+  published?:
+    | { projectId: string; proposalUrl: string; publishedAt: string }
+    | { link: string; token: string; publishedAt: string }
+    | { review: true; submittedAt: string };
 }
 
 const dir = () => config.companiesDir;

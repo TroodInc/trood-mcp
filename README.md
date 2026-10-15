@@ -41,7 +41,8 @@ Research and offers:
 | `get_catalog` | The options an offer is built from. Templates so far: hotels and retreats; prices are placeholders you set |
 | `list_companies`, `get_company` | What you researched, with suggested options (by rule, no model) |
 | `draft_offer` | Writes the brief: headline, what you heard, chosen facts with sources, options with your prices. Saved locally; nothing is sent |
-| `publish_offer` | After the person approves the brief (`confirm: true`): a Product Engine draft project with one stage per option and a private link, valid 30 days. Needs a Trood operator account; a Partner sends the saved brief instead |
+| `publish_offer` | After the person approves the brief (`confirm: true`), it goes to the Trood Platform. A Trood operator gets a Trood offer with its private link straight away. A partner's offer goes to Trood to check, with their Product Engine referral code: Trood creates the link and emails it to them, and they earn 10% of what the business pays in its first 12 months. Trood prices it from its own price list and delivers the work |
+| `list_my_offers` | A partner's offers on Trood: being checked, declined, or the link, and whether the company opened or started it. Never what the company told Trood |
 
 Your Trood work:
 
@@ -73,7 +74,7 @@ Where research lives: `~/.trood/companies/<domain>.json` and `<domain>.brief.md`
 
 - A plain TypeScript package on the official MCP SDK, not NestJS (ADR-014's stack for the platform API): it has no database and no routes of its own, so a framework would add nothing. It can be mounted in the NestJS service when that exists.
 - Sign-in goes through trood-identity (`POST /auth/login`), as ADR-014 requires; the session token is the Kratos session Product Engine accepts as a bearer. It is stored in `~/.trood/mcp-session.json`, readable by you only, or taken from `TROOD_SESSION_TOKEN`.
-- Service addresses can be overridden: `TROOD_IDENTITY_URL`, `TROOD_ENGINE_URL`, `TROOD_TREE_URL`.
+- Service addresses can be overridden: `TROOD_IDENTITY_URL`, `TROOD_ENGINE_URL`, `TROOD_TREE_URL`, `TROOD_PLATFORM_URL`.
 
 ## Check
 

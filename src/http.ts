@@ -42,4 +42,5 @@ async function call(base: string, path: string, init: RequestInit & { auth?: boo
 
 export const engine = (path: string, init: RequestInit = {}) => call(config.engineUrl, path, { ...init, auth: true });
 export const tree = (path: string) => call(config.treeUrl, path);
+export const platform = (path: string, init: RequestInit = {}) => call(config.platformUrl, path, { ...init, auth: true });
 export const identity = (path: string, init: RequestInit & { auth?: boolean } = {}) => call(config.identityUrl, path, init);

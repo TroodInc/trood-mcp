@@ -7,7 +7,7 @@ import { config } from './config.js';
 import { CATALOG, findOption, matchOptions } from './catalog.js';
 import { detect } from './detect.js';
 import { fetchPage, FetchRefused, interestingLinks, type FetchedPage } from './fetchpage.js';
-import { engine, TroodError } from './http.js';
+import { engine, platform, TroodError } from './http.js';
 import { domainOf, listCompanies, loadCompany, saveCompany, type Company, type Fact } from './store.js';
 
 /**
@@ -157,7 +157,8 @@ export function registerResearchTools(server: McpServer): void {
     annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
   }, () => run(async () => json(listCompanies().map((c) => ({
     domain: c.domain, name: c.name, researchedAt: c.researchedAt, facts: c.facts.length,
-    offer: c.offer ? 'drafted' : null, published: c.published?.proposalUrl ?? null,
+    offer: c.offer ? 'drafted' : null,
+    published: !c.published ? null : 'proposalUrl' in c.published ? c.published.proposalUrl : 'link' in c.published ? c.published.link : 'sent to Trood to check',
   })))));
 
   server.registerTool('get_company', {
@@ -204,7 +205,7 @@ export function registerResearchTools(server: McpServer): void {
 
   server.registerTool('draft_offer', {
     title: 'Draft an offer',
-    description: "Drafts the brief the company's management will read: your headline, what you heard from them, the facts you choose (recorded ones only, each shown with its source) and catalog options with your price per option. Saved on this computer for you to review. Nothing is sent and nothing reaches Trood. Show the person the brief and let them change it before they publish or send it.",
+    description: "Drafts the brief the company's management will read: your headline, what you heard from them, the facts you choose (recorded ones only, each shown with its source) and catalog options, with your own price per option if you want one in the brief. Saved on this computer for you to review. Nothing is sent and nothing reaches Trood. Show the person the brief and let them change it before they publish it.",
     inputSchema: {
       company: z.string().min(3).max(300).describe('Domain or website'),
       headline: z.string().min(5).max(120).describe('One line in their terms, for example "Answering every guest in minutes at Sample Retreat"'),
@@ -229,43 +230,49 @@ export function registerResearchTools(server: McpServer): void {
     const file = join(config.companiesDir, `${c.domain}.brief.md`);
     writeFileSync(file, c.offer.brief, { mode: 0o600 });
     const missing = c.offer.options.filter((o) => o.amount == null).map((o) => o.id);
-    return text(`${c.offer.brief}\n\n---\nSaved to ${file}. Nothing was sent.${missing.length ? ` Before publishing, set a price for: ${missing.join(', ')}.` : ' To create the private link, use publish_offer once the person has approved this brief.'}`);
+    return text(`${c.offer.brief}\n\n---\nSaved to ${file}. Nothing was sent. To publish it, use publish_offer once the person has approved this brief. Trood prices the offer from its own price list when it publishes${missing.length ? `; prices left blank here: ${missing.join(', ')}` : ''}.`);
   }));
 
   server.registerTool('publish_offer', {
-    title: 'Publish an offer as a private link',
-    description: "Creates the offer in Product Engine as a draft project with one stage per option and a private proposal link the company can open without an account. It sends nothing: the person sends the link themselves. Only call it after the person has read the brief and said yes, and pass confirm: true. Needs a Trood operator account; Partners can send the saved brief themselves.",
+    title: 'Publish an offer',
+    description: "Sends the approved brief to the Trood Platform. For a Trood operator it becomes an offer with a private link straight away. For a partner it goes to Trood to check, with the partner's referral code: Trood creates the link and emails it to them, and the partner earns 10% of what the business pays in its first 12 months. Trood prices it from its own price list and delivers the work. Nothing is sent to the company: the person sends the link themselves. Only call it after the person has read the brief and said yes, and pass confirm: true.",
     inputSchema: {
       company: z.string().min(3).max(300).describe('Domain or website'),
+      companyName: z.string().min(1).max(80).optional().describe('The company\'s name as the brief should show it, if the research did not find it'),
       confirm: z.literal(true).describe('The person approved this exact brief'),
     },
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
-  }, ({ company }) => run(async () => {
+  }, ({ company, companyName }) => run(async () => {
     const c = loadCompany(company);
     if (!c?.offer) return fail('No offer drafted for this company. Use draft_offer first.');
     if (c.published) return json({ alreadyPublished: c.published });
-    const missing = c.offer.options.filter((o) => o.amount == null).map((o) => o.id);
-    if (missing.length) return fail(`Set a price for every option before publishing (draft_offer again with amounts): ${missing.join(', ')}.`);
-    const brief = join(config.companiesDir, `${c.domain}.brief.md`);
-    let project: { id?: string };
-    try {
-      project = (await engine('/projects/operator', { method: 'POST', body: JSON.stringify({ title: c.offer.headline, description: c.offer.brief }) })) as { id?: string };
-    } catch (err) {
-      if (err instanceof TroodError && err.status === 403) {
-        return fail(`Publishing a link needs a Trood operator account. Your brief is saved at ${brief}: send it yourself, or ask the Trood team to publish it.`);
-      }
-      throw err;
+    const name = companyName ?? c.name ?? c.domain;
+    const body = {
+      companyName: name,
+      website: c.domain,
+      headline: c.offer.headline,
+      heard: c.offer.heard,
+      selected: c.offer.options.map((o) => o.id),
+    };
+    const me = (await engine('/users/me')) as { roles?: string[] };
+    const operator = (me.roles ?? []).some((r) => r === 'operator' || r === 'admin');
+    if (operator) {
+      const { workspaceId } = (await platform('/provider', { method: 'POST', body: '{}' })) as { workspaceId: string };
+      const r = (await platform(`/workspaces/${encodeURIComponent(workspaceId)}/offers`, { method: 'POST', body: JSON.stringify(body) })) as { token: string; link: string };
+      c.published = { link: r.link, token: r.token, publishedAt: new Date().toISOString() };
+      saveCompany(c);
+      return json({ link: r.link, note: 'A Trood offer with its private link. Nothing was sent: share it with the company yourself, usually on WhatsApp. Follow it in the platform under Offers.' });
     }
-    if (!project?.id) return fail('Product Engine did not return the new project. Nothing else was changed.');
-    const milestones = c.offer.options.map((o, i) => {
-      const opt = findOption(o.id)!;
-      return { title: opt.title, description: opt.description, effortBand: opt.effortBand, order: i + 1, paymentAmount: o.amount };
-    });
-    await engine(`/projects/${encodeURIComponent(project.id)}/milestones`, { method: 'PUT', body: JSON.stringify({ milestones }) });
-    const link = (await engine(`/projects/${encodeURIComponent(project.id)}/proposal-link`, { method: 'POST', body: '{}' })) as { proposalUrl?: string };
-    if (!link?.proposalUrl) return fail(`The draft project ${project.id} was created, but no link came back. Open it in Product Engine to create the link.`);
-    c.published = { projectId: project.id, proposalUrl: link.proposalUrl, publishedAt: new Date().toISOString() };
+    const r = (await platform('/offers/submit', { method: 'POST', body: JSON.stringify({ ...body, notes: c.offer.brief, via: 'mcp' }) })) as { message?: string };
+    c.published = { review: true, submittedAt: new Date().toISOString() };
     saveCompany(c);
-    return json({ ...c.published, note: 'Private link, valid for 30 days. Nothing was sent: share it with the company yourself, usually on WhatsApp.' });
+    return json({ status: 'sent to Trood to check', note: `${r.message ?? 'Sent to Trood.'} Your referral code goes with it. Trood prices it from its own price list and delivers the work. See where it stands with list_my_offers.` });
   }));
+
+  server.registerTool('list_my_offers', {
+    title: 'My offers on Trood',
+    description: "The offers this person sent to Trood as a partner: whether Trood is checking it, declined it, or created the link, and whether the company opened or started it. Shows the link once it exists. Never shows what the company told Trood.",
+    inputSchema: {},
+    annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
+  }, () => run(async () => json(await platform('/offers/mine'))));
 }
