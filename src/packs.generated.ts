@@ -83,7 +83,7 @@ export const RECRUITMENT = pack({
   options: [
     { id: 'rec_screen', title: 'CVs screened and a shortlist ready each morning', description: 'Every new CV is read against the role and scored. You start the day with a shortlist and the reasons for each name.', relies: ['ats', 'boards'], size: 'M', signals: /\b(cvs?|resumes?|screen\w*|shortlist\w*|applicants?|applications?)\b/i },
     { id: 'rec_int', title: 'Interviews scheduled without the email chain', description: 'Candidates pick a time that suits the client from a link. The invite and reminder go out on their own.', relies: ['ats'], size: 'S', signals: /\b(interviews?|schedul\w*|calendars?)\b/i },
-    { id: 'rec_update', title: 'Every candidate kept up to date', description: 'When a candidate moves stage in your system, they get a short note. Nobody is left waiting without an answer.', relies: ['ats'], size: 'S', signals: /\b(updates?|ghost\w*|follow[- ]?ups?|feedback)\b/i },
+    { id: 'rec_update', title: 'Every candidate kept up to date', description: 'When a candidate moves stage in your system, they get a short note. Nobody is left waiting without an answer.', relies: ['ats'], size: 'S', signals: /\b(hear back|never hear|no (response|reply)|complain\w*|in the dark|updates?|ghost\w*|follow[- ]?ups?|feedback)\b/i },
     { id: 'rec_post', title: 'One job post on every board', description: 'Write the role once and it goes to LinkedIn, Indeed and JobStreet. Applicants come back into one list.', relies: ['boards', 'ats'], size: 'M', signals: /\b(job (posts?|ads?|boards?)|post(ing)? (roles|jobs)|linkedin|indeed|jobstreet)\b/i },
   ],
 });
@@ -101,7 +101,7 @@ export const CLINICS = pack({
     { id: 'noshows', prompt: 'How often do patients miss appointments?', choices: ['Rarely', 'A few a week', 'Most days'] },
   ],
   options: [
-    { id: 'cln_remind', title: 'Reminders that cut missed appointments', description: 'Patients get a reminder before each visit and can confirm or move it with one reply. The empty slot shows up in your calendar straight away.', relies: ['appointments', 'messaging'], size: 'S', signals: /\b(no[- ]?shows?|miss\w*|forget\w*|remind\w*|cancel\w*)\b/i },
+    { id: 'cln_remind', title: 'Reminders that cut missed appointments', description: 'Patients get a reminder before each visit and can confirm or move it with one reply. The empty slot shows up in your calendar straight away.', relies: ['appointments', 'messaging'], size: 'S', signals: /\b(confirm\w*|unconfirmed|(do not|don'?t|never|not) (turn|show) up|empty slots?|wasted|no[- ]?shows?|miss\w*|forget\w*|remind\w*|cancel\w*)\b/i },
     { id: 'cln_book', title: 'Patients book and move appointments on WhatsApp', description: 'Patients write as they do today and get a free time, booked into your calendar. Anything medical goes to your team with the conversation attached.', relies: ['messaging', 'appointments'], size: 'M', signals: /\b(book\w*|reschedul\w*|appointments?|whatsapp|phone|calls?|messages?)\b/i },
     { id: 'cln_forms', title: 'Patient forms filled in before the visit', description: 'New patients fill in their details and history from a link before they arrive. It lands in their record, not on a clipboard.', relies: ['appointments'], size: 'S', signals: /\b(forms?|paperwork|intake|history|registration|clipboard)\b/i },
     { id: 'cln_recall', title: 'Patients reminded when a checkup is due', description: 'Patients due for a checkup or cleaning get a message with a link to book. It runs every week without anyone keeping a list.', relies: ['appointments', 'messaging'], size: 'S', signals: /\b(recalls?|check-?ups?|cleanings?|come back|return visits?|due)\b/i },
@@ -112,7 +112,7 @@ export const CLINICS = pack({
 export const TRAVEL = pack({
   id: 'travel',
   label: 'Tour operators and travel agencies',
-  matches: /\b(tour (operators?|compan(y|ies)|agenc(y|ies)|business(es)?|packages?)|travel (agenc(y|ies)|agents?|compan(y|ies))|itinerar(y|ies)|dmcs?|safaris?|dive (cent(re|er)s?|shops?)|surf camps?)\b/i,
+  matches: /\b((day|guided|walking|boat|snorkel(ling)?|island) tours?|excursions?|tour (operators?|compan(y|ies)|agenc(y|ies)|business(es)?|packages?)|travel (agenc(y|ies)|agents?|compan(y|ies))|itinerar(y|ies)|dmcs?|safaris?|dive (cent(re|er)s?|shops?)|surf camps?)\b/i,
   slots: [
     { id: 'bookings', label: 'Booking system', choices: ['FareHarbor', 'Rezdy', 'Bókun', 'Google Sheets'], multiple: false },
     { id: 'resellers', label: 'Resellers', choices: ['Viator', 'GetYourGuide', 'Klook', 'Tripadvisor'], multiple: true },
@@ -156,7 +156,7 @@ export const REAL_ESTATE = pack({
 export const PROPERTY = pack({
   id: 'property',
   label: 'Property management',
-  matches: /\b(property manag\w*|tenants?|landlords|rent collection|maintenance requests?|strata|hoa)\b/i,
+  matches: /\b(we (manage|look after|run) (\d+ |about \d+ |over \d+ )?(apartments|flats|units|rental properties|properties|buildings)|property manag\w*|tenants?|landlords|rent collection|maintenance requests?|strata|hoa)\b/i,
   slots: [
     { id: 'software', label: 'Property software', choices: ['Buildium', 'AppFolio', 'Yardi', 'Google Sheets'], multiple: false },
     { id: 'messaging', label: 'Tenant messaging', choices: ['WhatsApp', 'Email', 'SMS'], multiple: true },
@@ -178,7 +178,7 @@ export const HOTELS = pack({
   id: 'hotels',
   label: 'Hotels, villas and retreats',
   matches: /\b(hotels?|villas?|retreats?|resorts?|guest ?houses?|homestays?|hostels?|bungalows?|glamping|b&b|bed and breakfast|lodges?|accommodation|airbnb|guest rooms?)\b/i,
-  fallback: /\b(guests?|check-?in|every booking|bookings? in one place)\b/i,
+  fallback: /\b(guests?(?! ?lists?)|check-?in|every booking|bookings? in one place)\b/i,
   slots: [
     { id: 'booking_engine', label: 'Booking engine', choices: ['Cloudbeds', 'SiteMinder', 'Little Hotelier'], multiple: false },
     { id: 'messaging', label: 'Guest messaging', choices: ['WhatsApp', 'Instagram', 'Email', 'Website chat'], multiple: true },
@@ -283,7 +283,7 @@ export const RESTAURANTS = pack({
 export const EVENTS = pack({
   id: 'events',
   label: 'Events and venues',
-  matches: /\b(event (agenc(y|ies)|planners?|planning|compan(y|ies)|organi[sz]ers?|venues?)|events (agency|company|business)|venues?|weddings?|wedding planners?|conference (cent(re|er)|organi[sz]er|venue)s?|catering|caterers?|festivals?|corporate events)\b/i,
+  matches: /\b(conferences?|exhibitions?|trade shows?|summits?|we organi[sz]e (events|parties|weddings|conferences)|event (agenc(y|ies)|planners?|planning|compan(y|ies)|organi[sz]ers?|venues?)|events (agency|company|business)|venues?|weddings?|wedding planners?|conference (cent(re|er)|organi[sz]er|venue)s?|catering|caterers?|festivals?|corporate events)\b/i,
   slots: [
     { id: 'tickets', label: 'Tickets and registration', choices: ['Eventbrite', 'Ticket Tailor', 'Luma'], multiple: false },
     { id: 'planning', label: 'Planning', choices: ['Google Sheets', 'Notion', 'HoneyBook'], multiple: false },
@@ -337,7 +337,7 @@ export const CAR_REPAIR = pack({
   options: [
     { id: 'car_quote', title: 'Repair estimates approved by customers on WhatsApp', description: 'The estimate goes to the customer with photos of the problem, and they approve it with one tap. Work starts without phone tag.', relies: ['workshop', 'messaging'], size: 'M', signals: /\b(estimates?|quotes?|approv\w*|photos?|phone tag|calls?)\b/i },
     { id: 'car_ready', title: 'Customers told when their car is ready', description: 'When the job is marked done, the customer gets a message with the total and a link to pay. Fewer calls to the desk.', relies: ['workshop', 'messaging'], size: 'S', signals: /\b(ready|status|updates?|calls?|pick ?up|collect\w*)\b/i },
-    { id: 'car_due', title: 'Service reminders when a car is due', description: 'Customers get a reminder when their next service is due, with a link to book. Your bays stay busy.', relies: ['workshop', 'messaging'], size: 'S', signals: /\b(service reminders?|due|come back|repeat|regulars?|quiet)\b/i },
+    { id: 'car_due', title: 'Service reminders when a car is due', description: 'Customers get a reminder when their next service is due, with a link to book. Your bays stay busy.', relies: ['workshop', 'messaging'], size: 'S', signals: /\b(next service|forget\w*|remind\w*|service reminders?|due|come back|repeat|regulars?|quiet)\b/i },
     { id: 'car_rev', title: 'Reviews answered in your voice', description: 'Every Google review gets a reply drafted for you to approve. Happy customers are asked for a review when they collect.', uses: ['Reviews'], relies: [], size: 'S', signals: REVIEWS },
   ],
 });
@@ -387,7 +387,7 @@ export const ECOMMERCE = pack({
 export const MANUFACTURING = pack({
   id: 'manufacturing',
   label: 'Manufacturing workshops',
-  matches: /\b(factor(y|ies)|manufacturing|we manufacture|manufacturer of|fabricat\w*|production lines?|cnc|joinery)\b/i,
+  matches: /\b((metal|steel|aluminium|aluminum|wood|furniture|garment|textile|sewing|printing|print) (workshops?|works|shops?|factor(y|ies))|metalwork\w*|woodwork\w*|factor(y|ies)|manufacturing|we manufacture|manufacturer of|fabricat\w*|production lines?|cnc|joinery)\b/i,
   slots: [
     { id: 'production', label: 'Production software', choices: ['Odoo', 'Katana', 'MRPeasy', 'Excel'], multiple: false },
     { id: 'accounting', label: 'Accounting', choices: ['Xero', 'QuickBooks'], multiple: false },
@@ -397,7 +397,7 @@ export const MANUFACTURING = pack({
     { id: 'status', prompt: 'How do customers check on their order?', choices: ['They call', 'Email', 'WhatsApp', "They don't"] },
   ],
   options: [
-    { id: 'mfg_status', title: 'Customers see where their order is without calling', description: 'Customers get a message as their order moves through production, and a page with its status. Fewer calls asking where it is.', relies: ['production'], size: 'M', signals: /\b(status|where (is|it is)|updates?|calls?|chas\w*|deadlines?|late)\b/i },
+    { id: 'mfg_status', title: 'Customers see where their order is without calling', description: 'Customers get a message as their order moves through production, and a page with its status. Fewer calls asking where it is.', relies: ['production'], size: 'M', signals: /\b(call(s|ing)?|when (their|the|my|our) orders? (will be|is) ready|ready|progress|status|where (is|it is)|updates?|calls?|chas\w*|deadlines?|late)\b/i },
     { id: 'mfg_plan', title: 'Production schedule built from confirmed orders', description: 'Confirmed orders become a weekly schedule by machine and team, with dates you can promise. Changes move everything else along.', relies: ['production', 'accounting'], size: 'L', signals: /\b(schedul\w*|planning|capacity|machines?|shifts?|lead times?)\b/i },
     { id: 'mfg_mat', title: 'Materials reordered before they run out', description: 'When a material drops below its level, a purchase order is drafted for the usual supplier. Production stops waiting for stock.', relies: ['production'], size: 'S', signals: /\b(materials?|stock|inventory|run(ning)? out|suppliers?|purchas\w*|reorder\w*)\b/i },
     { id: 'mfg_quote', title: 'Quote requests turned into a priced draft', description: 'A request with specs or a drawing becomes a draft quote from your own costs and margins. You check it and send it.', relies: ['production', 'accounting'], size: 'M', signals: /\b(quotes?|quotations?|pric\w*|specs?|drawings?|rfqs?|estimates?)\b/i },
@@ -417,7 +417,7 @@ export const LOGISTICS = pack({
     { id: 'drivers', prompt: 'How do drivers get their jobs?', choices: ['WhatsApp group', 'Dispatch app', 'Phone calls', 'Paper'] },
   ],
   options: [
-    { id: 'lgs_track', title: 'Customers told where their delivery is without calling', description: 'Customers get a message when the driver sets off and a link to follow it. Calls to the office drop.', relies: ['updates', 'dispatch'], size: 'M', signals: /\b(tracking|where is|calls?|updates?|eta|customers? ask\w*)\b/i },
+    { id: 'lgs_track', title: 'Customers told where their delivery is without calling', description: 'Customers get a message when the driver sets off and a link to follow it. Calls to the office drop.', relies: ['updates', 'dispatch'], size: 'M', signals: /\b(call(s|ing)?|where (their|our|my|the) (delivery|parcel|package|shipment|order)|arriv\w*|tracking|where is|calls?|updates?|eta|customers? ask\w*)\b/i },
     { id: 'lgs_pod', title: 'Proof of delivery photos saved to each order', description: 'Drivers take a photo and a signature at the door and it is saved to the order. Disputes are settled with proof.', relies: ['dispatch'], size: 'S', signals: /\b(proof|pod|photos?|signatures?|disputes?|claims?)\b/i },
     { id: 'lgs_board', title: 'Jobs given to drivers from one board', description: 'Orders land on one board, you assign them to drivers, and each driver gets their route on the phone. No more WhatsApp group lists.', relies: ['dispatch'], size: 'M', signals: /\b(drivers?|dispatch\w*|routes?|assign\w*|whatsapp groups?|manual\w*|orders?)\b/i },
     { id: 'lgs_quote', title: 'Freight quote requests answered from email', description: 'A quote request by email becomes a draft price from your own rates. You check it and send it the same hour.', relies: ['updates'], size: 'M', signals: /\b(quotes?|quotations?|rates?|pric\w*|rfqs?)\b/i },
@@ -427,7 +427,7 @@ export const LOGISTICS = pack({
 export const WHOLESALE = pack({
   id: 'wholesale',
   label: 'Wholesale and distribution',
-  matches: /\b(wholesalers?|wholesale (business(es)?|compan(y|ies)|distribut\w*|suppliers? of)|distributors? (of|for)|(we are|we're) (a |an )?(wholesale|distribution)\b|distribution (compan(y|ies)|business(es)?)|trade customers?|b2b (orders?|sales|customers?))\b/i,
+  matches: /^\W*distributors?\b|\b(we (are|run) (a |an )?(\w+ )?distributor|(food|beverage|drinks?|fmcg|produce|seafood|meat|dairy|building materials?|electronics|spare parts?|medical supplies|packaging) (distributors?|distribution)|wholesalers?|wholesale (business(es)?|compan(y|ies)|distribut\w*|suppliers? of)|distributors? (of|for)|(we are|we're) (a |an )?(wholesale|distribution)\b|distribution (compan(y|ies)|business(es)?)|trade customers?|b2b (orders?|sales|customers?))\b/i,
   slots: [
     { id: 'erp', label: 'Accounting or ERP', choices: ['Xero', 'QuickBooks', 'Odoo', 'SAP Business One'], multiple: false },
     { id: 'orders', label: 'Where orders arrive', choices: ['WhatsApp', 'Email', 'Shopify B2B'], multiple: true },
@@ -437,7 +437,7 @@ export const WHOLESALE = pack({
     { id: 'who', prompt: 'Who types orders in?', choices: ['Sales team', 'Office admin', 'The owner', 'Customers themselves'] },
   ],
   options: [
-    { id: 'whl_orders', title: 'WhatsApp and email orders entered for you', description: 'An order sent by message or email is read and entered as a draft in your system. Your team checks it instead of typing it.', relies: ['orders', 'erp'], size: 'M', signals: /\b(orders?|typ(e|ing)|manual\w*|whatsapp|emails?|entry|mistakes?|errors?)\b/i },
+    { id: 'whl_orders', title: 'WhatsApp and email orders entered for you', description: 'An order sent by message or email is read and entered as a draft in your system. Your team checks it instead of typing it.', relies: ['orders', 'erp'], size: 'M', signals: /\b(retyp\w*|re-?enter\w*|by hand|orders?|typ(e|ing)|manual\w*|whatsapp|emails?|entry|mistakes?|errors?)\b/i },
     { id: 'whl_portal', title: 'Trade customers reorder from their own page', description: 'Each customer gets a page with their prices and past orders and can reorder in a minute. Orders go straight into your system.', relies: ['erp'], size: 'L', signals: /\b(portal|reorder\w*|self[- ]serv\w*|catalogu?e|price lists?)\b/i },
     { id: 'whl_stock', title: 'Sales see real stock before they promise', description: 'Your sales team checks live stock from their phone before they confirm. No more promising what is not there.', relies: ['erp'], size: 'S', signals: /\b(stock|inventory|availab\w*|promis\w*|backorders?)\b/i },
     { id: 'whl_chase', title: 'Overdue invoices chased on time', description: 'Overdue invoices get a polite reminder on a schedule you set. You see who owes what each Monday.', relies: ['erp'], size: 'S', signals: /\b(invoic\w*|overdue|late|payments?|cash ?flow|chas\w*|receivables?)\b/i },
@@ -460,7 +460,7 @@ export const TRADES = pack({
   options: [
     { id: 'bld_quote', title: 'Quotes sent the same day as the site visit', description: 'Notes and photos from the site visit become a draft quote from your own prices. You check it and send it before the end of the day.', relies: ['jobs', 'messaging'], size: 'M', signals: /\b(quotes?|quotations?|estimates?|site visits?|pric\w*)\b/i },
     { id: 'bld_sched', title: 'Jobs scheduled and the team told each morning', description: 'Each person gets their jobs, addresses and notes on their phone every morning. Changes reach them straight away.', relies: ['jobs'], size: 'S', signals: /\b(schedul\w*|teams?|crews?|calendars?|jobs?|whatsapp groups?)\b/i },
-    { id: 'bld_update', title: 'Clients get photo updates as the work moves', description: 'Photos from site go to the client with a short note at each step. Fewer calls asking how it is going.', relies: ['jobs', 'messaging'], size: 'M', signals: /\b(updates?|photos?|progress|clients? (call|ask)\w*)\b/i },
+    { id: 'bld_update', title: 'Clients get photo updates as the work moves', description: 'Photos from site go to the client with a short note at each step. Fewer calls asking how it is going.', relies: ['jobs', 'messaging'], size: 'M', signals: /\b(call(s|ing)? to ask|keep call\w*|how (it|their|the|our) \w+ is going|updates?|photos?|progress|clients? (call|ask)\w*)\b/i },
     { id: 'bld_inv', title: 'Invoices sent when the job is done, then chased', description: 'Marking a job done sends the invoice, and late payers get a polite reminder. You stop doing invoices at night.', relies: ['jobs', 'accounting'], size: 'S', signals: /\b(invoic\w*|payments?|late|overdue|chas\w*|paperwork)\b/i },
   ],
 });
@@ -468,7 +468,7 @@ export const TRADES = pack({
 export const PROFESSIONAL = pack({
   id: 'professional',
   label: 'Law and accounting firms',
-  matches: /\b(law (firm|office|practice)s?|lawyers|solicitors?|attorneys?|notar(y|ies)|legal (services|practice|firm)|accounting (firm|practice|office)s?|we are accountants|bookkeeping (firm|service|business|practice)s?|tax (advis\w*|consultan\w*) (firm|practice|office)s?|audit firms?)\b/i,
+  matches: /\b(accountants|accountancy|law (firm|office|practice)s?|lawyers|solicitors?|attorneys?|notar(y|ies)|legal (services|practice|firm)|accounting (firm|practice|office)s?|we are accountants|bookkeeping (firm|service|business|practice)s?|tax (advis\w*|consultan\w*) (firm|practice|office)s?|audit firms?)\b/i,
   slots: [
     { id: 'practice', label: 'Practice software', choices: ['Clio', 'Karbon', 'TaxDome', 'Xero Practice Manager'], multiple: false },
     { id: 'documents', label: 'Documents', choices: ['Google Drive', 'Dropbox', 'SharePoint'], multiple: false },
