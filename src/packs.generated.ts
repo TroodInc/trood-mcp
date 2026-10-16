@@ -178,7 +178,7 @@ export const HOTELS = pack({
   id: 'hotels',
   label: 'Hotels, villas and retreats',
   matches: /\b(hotels?|villas?|retreats?|resorts?|guest ?houses?|homestays?|hostels?|bungalows?|glamping|b&b|bed and breakfast|lodges?|accommodation|airbnb|guest rooms?)\b/i,
-  fallback: /\b(guests?|check-?in)\b/i,
+  fallback: /\b(guests?|check-?in|every booking|bookings? in one place)\b/i,
   slots: [
     { id: 'booking_engine', label: 'Booking engine', choices: ['Cloudbeds', 'SiteMinder', 'Little Hotelier'], multiple: false },
     { id: 'messaging', label: 'Guest messaging', choices: ['WhatsApp', 'Instagram', 'Email', 'Website chat'], multiple: true },
