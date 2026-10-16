@@ -28,6 +28,8 @@ export interface Company {
   technologies: Detected[];
   facts: Fact[];
   offer?: {
+    /** The pack its options come from; missing on offers drafted before packs (hotels). */
+    industry?: string;
     headline: string;
     heard: string;
     factIds: string[];

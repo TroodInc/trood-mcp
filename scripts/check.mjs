@@ -8,10 +8,13 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { inSync } from './sync-packs.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const results = [];
 const expect = (name, ok, detail = '') => results.push(`${ok ? 'PASS' : 'FAIL'} ${name}${ok ? '' : `: ${detail}`}`);
+
+expect('the packs match the API\'s (api/src/catalog/packs.ts); run node scripts/sync-packs.mjs', inSync());
 
 const posted = [];
 const stub = createServer((req, res) => {
@@ -123,6 +126,7 @@ expect('research detects what the site runs on', ['Booking.com', 'Cloudbeds', 'I
 expect('research reads the home page and its villas and contact pages', (rj.pagesRead ?? []).length === 3, JSON.stringify(rj.pagesRead));
 expect('page text is labelled untrusted', /UNTRUSTED/.test(rj.pageText?.warning ?? '') && /IGNORE ALL PREVIOUS/.test(JSON.stringify(rj.pageText)));
 expect('detected tools become facts with sources, no phone number', (rj.facts ?? []).some((f) => f.statement === 'Guests can reach them on WhatsApp' && f.sourceUrl.startsWith(siteUrl)) && !JSON.stringify(rj.facts).includes('620000000'));
+expect('the industry is read from the site', rj.industry === 'hotels', rj.industry);
 expect('options suggested by rule', ['inq', 'list', 'pre', 'rev'].every((id) => (rj.suggestedOptions ?? []).some((o) => o.id === id)), JSON.stringify(rj.suggestedOptions));
 const roomsUrl = (rj.pagesRead ?? []).find((pg) => pg.url.endsWith('/rooms'))?.url;
 const fact = await client.callTool({ name: 'add_fact', arguments: { company: siteUrl, statement: 'Offers spa packages for in-house guests', sourceUrl: roomsUrl } });
@@ -133,8 +137,12 @@ expect('a fact from an unread page is refused', badSource.isError === true, text
 const email = await client.callTool({ name: 'add_fact', arguments: { company: siteUrl, statement: 'Front desk is frontdesk@sampleretreat.example', sourceUrl: roomsUrl } });
 const named = await client.callTool({ name: 'add_fact', arguments: { company: siteUrl, statement: 'Made Wirawan is the owner and decides fast', sourceUrl: roomsUrl } });
 expect('facts with an email or a named person are refused', email.isError === true && named.isError === true, text(email) + ' / ' + text(named));
-const catalog = await client.callTool({ name: 'get_catalog', arguments: {} });
+const catalog = await client.callTool({ name: 'get_catalog', arguments: { industry: 'hotels' } });
 expect('catalog lists the hotel options with placeholder prices', /Inquiries answered/.test(text(catalog)) && /\[\$ from-to\]/.test(text(catalog)));
+const index = text(await client.callTool({ name: 'get_catalog', arguments: {} }));
+expect('without an industry, the catalog lists every pack', /"industry": "restaurants"/.test(index) && /rst_orders/.test(index) && /"industry": "clinics"/.test(index), index.slice(0, 200));
+const mixed = await client.callTool({ name: 'draft_offer', arguments: { company: siteUrl, headline: 'Mixed offer here', heard: 'Something we heard.', factIds: ['tech-whatsapp'], options: [{ id: 'inq' }, { id: 'rst_orders' }] } });
+expect('an offer cannot mix industries', mixed.isError === true && /one industry/.test(text(mixed)), text(mixed));
 const draftNoPrice = await client.callTool({ name: 'draft_offer', arguments: { company: siteUrl, headline: 'Answering every guest in minutes at Sample Retreat', heard: 'Your front desk answers in shifts, so replies slow down at night.', factIds: [factId, 'tech-whatsapp'], options: [{ id: 'inq' }, { id: 'list' }] } });
 expect('a draft without prices is saved; Trood prices it from its list', !draftNoPrice.isError && /prices left blank here: inq, list/.test(text(draftNoPrice)) && /Trood prices the offer from its own price list/.test(text(draftNoPrice)) && /Nothing was sent/.test(text(draftNoPrice)), text(draftNoPrice).slice(-200));
 const fakeFact = await client.callTool({ name: 'draft_offer', arguments: { company: siteUrl, headline: 'X offer', heard: 'Something we heard.', factIds: ['made-up'], options: [{ id: 'inq', amount: 1000 }] } });
@@ -145,7 +153,7 @@ const noConfirm = await client.callTool({ name: 'publish_offer', arguments: { co
 expect('publishing needs confirm: true', noConfirm.isError === true);
 const pub = await client.callTool({ name: 'publish_offer', arguments: { company: siteUrl, confirm: true } });
 const offer = posted.find((x) => x.offer)?.offer;
-expect('an operator publishes a Trood offer on the platform, with its link', !pub.isError && /\/d\/offer-token/.test(text(pub)) && offer?.headline === 'Answering every guest in minutes at Sample Retreat' && JSON.stringify(offer?.selected) === '["inq","list"]' && posted.every((x) => !x.create), text(pub));
+expect('an operator publishes a Trood offer on the platform, with its link', !pub.isError && /\/d\/offer-token/.test(text(pub)) && offer?.headline === 'Answering every guest in minutes at Sample Retreat' && JSON.stringify(offer?.selected) === '["inq","list"]' && offer?.industry === 'hotels' && posted.every((x) => !x.create), text(pub));
 const again = await client.callTool({ name: 'publish_offer', arguments: { company: siteUrl, confirm: true } });
 expect('publishing twice returns the same link', /alreadyPublished/.test(text(again)) && posted.filter((x) => x.offer).length === 1);
 const companies = JSON.parse(text(await client.callTool({ name: 'list_companies', arguments: {} })));
@@ -178,7 +186,7 @@ const partnerPub = await client.callTool({ name: 'publish_offer', arguments: { c
 const notAdmin = await client.callTool({ name: 'get_traffic', arguments: {} });
 expect('a non-admin is refused analytics cleanly', notAdmin.isError === true && /do not have access/.test(text(notAdmin)), text(notAdmin));
 const submitted = posted.find((x) => x.submit)?.submit;
-expect('a partner\'s offer goes to Trood to check, with their brief as notes', !partnerPub.isError && /sent to Trood to check/.test(text(partnerPub)) && /referral code/.test(text(partnerPub)) && JSON.stringify(submitted?.selected) === '["inq"]' && /Answering every guest/.test(submitted?.notes ?? '') && submitted?.via === 'mcp', text(partnerPub));
+expect('a partner\'s offer goes to Trood to check, with their brief as notes', !partnerPub.isError && /sent to Trood to check/.test(text(partnerPub)) && /referral code/.test(text(partnerPub)) && JSON.stringify(submitted?.selected) === '["inq"]' && submitted?.industry === 'hotels' && /Answering every guest/.test(submitted?.notes ?? '') && submitted?.via === 'mcp', text(partnerPub));
 const mine = await client.callTool({ name: 'list_my_offers', arguments: {} });
 expect('a partner sees where their offers stand', !mine.isError && /Sample Retreat/.test(text(mine)) && /review/.test(text(mine)), text(mine));
 await client.close();

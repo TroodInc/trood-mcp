@@ -38,7 +38,7 @@ Research and offers:
 |---|---|
 | `research_company` | Reads a company's website (home page and up to three of its own pages), detects booking engine, sales channels, guest messaging, website system, payments; records them as facts with their source page; returns the page text for your model to read, labelled untrusted |
 | `add_fact` | Records a fact with the page it came from. Only facts from pages that were read; nothing about people (names, emails, phone numbers are refused) |
-| `get_catalog` | The options an offer is built from. Templates so far: hotels and retreats; prices are placeholders you set |
+| `get_catalog` | The options an offer is built from, per industry: the platform's 20 industry packs (hotels, restaurants, clinics and more). Without an industry, the list of packs; prices are placeholders you set |
 | `list_companies`, `get_company` | What you researched, with suggested options (by rule, no model) |
 | `draft_offer` | Writes the brief: headline, what you heard, chosen facts with sources, options with your prices. Saved locally; nothing is sent |
 | `publish_offer` | After the person approves the brief (`confirm: true`), it goes to the Trood Platform. A Trood operator gets a Trood offer with its private link straight away. A partner's offer goes to Trood to check, with their Product Engine referral code: Trood creates the link and emails it to them, and they earn 10% of what the business pays in its first 12 months. Trood prices it from its own price list and delivers the work |
@@ -88,6 +88,6 @@ Runs the server under the SDK's own client: 46 checks. A fixture website ("Sampl
 
 - A hosted connector for claude.ai needs OAuth in front of Trood's login; Kratos alone does not provide it.
 - The shared facts cache (one company researched once, across providers) needs the platform's server; today each provider's research is their own.
-- Providers' own catalogs: the catalog is Trood's hotel templates until the platform stores providers' catalogs.
+- Providers' own catalogs: the catalog is Trood's industry packs (a generated copy of `api/src/catalog/packs.ts`; after changing that file run `node scripts/sync-packs.mjs`, and `npm run check` fails until you do) until the platform stores providers' catalogs.
 - `run_trood_analysis`, Trood's paid analysis for Pro, is not built.
 - Outside providers: Product Engine's operator role sees every project, so v0.1 is for Trood's own team until operators are scoped to their own projects.

@@ -1,8 +1,13 @@
 /**
- * Trood's catalog, until the platform's own store holds providers' catalogs.
- * Templates so far: hotels and retreats. Prices are placeholders by design:
- * the provider sets each amount before an offer is published.
+ * Trood's catalog: the platform's industry packs (a generated copy of the API's
+ * api/src/catalog/packs.ts; npm run check fails if they differ). Prices are
+ * placeholders by design: the provider sets each amount, and Trood prices a
+ * published offer from its own rate card.
  */
+import { PACKS, detectPack, packById, packOfOption, type Option } from './packs.generated.js';
+
+export { detectPack, packById, packOfOption };
+
 export interface CatalogOption {
   id: string;
   title: string;
@@ -13,27 +18,47 @@ export interface CatalogOption {
   priceRange: string;
 }
 
-export const CATALOG: Record<string, CatalogOption[]> = {
-  hotels: [
-    { id: 'inq', title: 'Inquiries answered with your prices and dates', description: 'Common questions on WhatsApp and Instagram answered straight away. Anything that needs a person goes to the front desk with the conversation attached.', answers: ['Guests wait too long for replies', 'Same questions answered all day'], uses: ['Guest messaging', 'Booking engine'], effortBand: 'M', priceRange: '[$ from-to]' },
-    { id: 'pre', title: 'Pre-arrival details collected ahead', description: 'A short form before arrival. Answers become tasks for the right person.', answers: ['Pre-arrival details chased by message'], uses: ['Guest messaging', 'Booking engine'], effortBand: 'S', priceRange: '[$ from-to]' },
-    { id: 'list', title: 'One list of bookings from every channel', description: "Website, Booking.com and Agoda bookings in one list, tomorrow's arrivals first.", answers: ['Bookings scattered across channels'], uses: ['Booking engine', 'Sales channels'], effortBand: 'M', priceRange: '[$ from-to]' },
-    { id: 'rev', title: 'Reviews answered in your voice', description: 'Google, Tripadvisor and Booking.com reviews get a reply drafted for you to approve.', answers: ['Reviews left without an answer'], uses: ['Reviews', 'Sales channels'], effortBand: 'S', priceRange: '[$ from-to]' },
-  ],
-};
+const toCatalog = (o: Option): CatalogOption => ({
+  id: o.id,
+  title: o.title,
+  description: o.description,
+  answers: o.answers ?? [],
+  uses: o.uses,
+  effortBand: o.size,
+  priceRange: '[$ from-to]',
+});
+
+export const INDUSTRY_IDS = PACKS.map((p) => p.id) as [string, ...string[]];
+
+export const CATALOG: Record<string, CatalogOption[]> = Object.fromEntries(PACKS.map((p) => [p.id, p.options.map(toCatalog)]));
+
+/** Every pack, with its options' ids, titles and sizes: what to pass get_catalog. */
+export function industriesIndex() {
+  return PACKS.map((p) => ({ industry: p.id, label: p.label, options: p.options.map((o) => ({ id: o.id, title: o.title, effortBand: o.size })) }));
+}
 
 export function findOption(id: string): CatalogOption | undefined {
-  return Object.values(CATALOG).flat().find((o) => o.id === id);
+  const o = packOfOption(id)?.options.find((x) => x.id === id);
+  return o ? toCatalog(o) : undefined;
 }
 
 /** Deterministic suggestions from what the site shows, the self-serve page's rules. */
-export function matchOptions(slots: Set<string>, names: Set<string>): { option: CatalogOption; why: string }[] {
+export function matchOptions(industry: string, slots: Set<string>, names: Set<string>): { option: CatalogOption; why: string }[] {
   const out: { option: CatalogOption; why: string }[] = [];
   const add = (id: string, why: string) => { const o = findOption(id); if (o && !out.some((x) => x.option.id === id)) out.push({ option: o, why }); };
-  if (slots.has('Guest messaging')) add('inq', `Guests can write on ${[...names].filter((n) => ['WhatsApp', 'Instagram', 'Facebook', 'Telegram'].includes(n)).join(', ')}`);
-  const channels = [...names].filter((n) => ['Booking.com', 'Agoda', 'Expedia', 'Airbnb'].includes(n));
-  if (channels.length >= 1 && slots.has('Booking engine')) add('list', `Bookings arrive from the website and ${channels.join(', ')}`);
-  if (slots.has('Booking engine')) add('pre', 'A booking engine is in place to send pre-arrival forms from');
-  if (names.has('Tripadvisor') || channels.length) add('rev', `Reviews collect on ${[...(names.has('Tripadvisor') ? ['Tripadvisor'] : []), ...channels].join(', ')}`);
+  if (industry === 'hotels') {
+    if (slots.has('Guest messaging')) add('inq', `Guests can write on ${[...names].filter((n) => ['WhatsApp', 'Instagram', 'Facebook', 'Telegram'].includes(n)).join(', ')}`);
+    const channels = [...names].filter((n) => ['Booking.com', 'Agoda', 'Expedia', 'Airbnb'].includes(n));
+    if (channels.length >= 1 && slots.has('Booking engine')) add('list', `Bookings arrive from the website and ${channels.join(', ')}`);
+    if (slots.has('Booking engine')) add('pre', 'A booking engine is in place to send pre-arrival forms from');
+    if (names.has('Tripadvisor') || channels.length) add('rev', `Reviews collect on ${[...(names.has('Tripadvisor') ? ['Tripadvisor'] : []), ...channels].join(', ')}`);
+    return out;
+  }
+  // Any other pack: an option is suggested when the site shows a tool from the slots it relies on.
+  const pack = packById(industry);
+  for (const o of pack?.options ?? []) {
+    const seen = pack!.slots.filter((s) => o.relies.includes(s.id)).flatMap((s) => s.choices.filter((c) => names.has(c)));
+    if (seen.length) add(o.id, `The site shows ${[...new Set(seen)].join(', ')}`);
+  }
   return out;
 }
