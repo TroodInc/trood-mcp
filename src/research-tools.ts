@@ -50,7 +50,7 @@ function techFacts(c: Company): Fact[] {
   const now = new Date();
   return c.technologies.map((t) => ({
     id: `tech-${t.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
-    statement: t.slot === 'Guest messaging' ? `Guests can reach them on ${t.name}` : `Uses ${t.name} (${t.slot.toLowerCase()})`,
+    statement: t.slot === 'Guest messaging' ? `${c.industry === 'hotels' ? 'Guests' : 'Customers'} can reach them on ${t.name}` : `Uses ${t.name} (${t.slot.toLowerCase()})`,
     sourceUrl: t.url,
     kind: 'technology',
     state: 'fact',
