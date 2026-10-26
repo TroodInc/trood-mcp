@@ -1,36 +1,85 @@
 # Trood MCP
 
-Version 0.2. Research a company and prepare a precise offer for it with your own Claude, on your own tokens: read its website, see what it runs on, record facts with their sources, match catalog options, draft the brief, and publish it as a private link. Trood pays for no model calls; the research stays on your computer.
+Version 0.3. Licensed under the Apache License 2.0 (see LICENSE).
 
-It also reads your Trood work: your Product Engine projects with their stages and payments, the goals and decisions recorded for your company and projects, project messages and updates, and the public Technology Tree.
+Trood for your coding agent. The agent writes the code; Trood takes care of the environment around it and of the people: putting a project online (GitHub, Vercel, Railway), secrets, domains, the systems a business runs, choosing technologies, and finding help. Help adapts per area, from a guided walkthrough for beginners to facts only for pros, and it never repeats an offer you turned down.
 
-It runs on your computer and speaks to Claude Desktop or Claude Code over stdio. User manual (the whole platform, and this MCP): https://claude.ai/artifact/H88uCbMjWqs1aRWSPFxmU4
+It also researches a company and prepares a precise offer for it with your own model, on your own tokens, and reads your Trood work: Product Engine projects, the goals and decisions recorded for your company, and the public Technology Tree.
+
+Trood pays for no model calls. Your credentials and research stay on your computer.
 
 ## Install
 
-```bash
-cd trood-platform-back/mcp
-npm install
-npm run build
-npm link            # makes the `trood-mcp` command available
-trood-mcp login     # your Trood email and password; the session lasts about a day
+Not on npm yet: until it is, use the local install below.
+
+Claude Code, as a plugin (bundles the server, the `/trood:start` and `/trood:launch` commands, and a skill that routes environment questions to Trood):
+
+```
+/plugin marketplace add <owner>/<repo>
+/plugin install trood@trood
 ```
 
-## Connect
+If you connected the older `trood` server by hand, remove it first so there is only one: `claude mcp remove trood`.
 
-Claude Code:
+Any MCP client, with npx:
 
 ```bash
-claude mcp add trood -- trood-mcp
+claude mcp add trood -- npx -y @trood/mcp
 ```
 
 Claude Desktop, in `claude_desktop_config.json`:
 
 ```json
-{ "mcpServers": { "trood": { "command": "trood-mcp" } } }
+{ "mcpServers": { "trood": { "command": "npx", "args": ["-y", "@trood/mcp"] } } }
 ```
 
+Local install, from this repository:
+
+```bash
+cd trood-platform-back/mcp
+npm install && npm run build && npm link   # makes the `trood-mcp` command available
+claude mcp add trood -- trood-mcp
+```
+
+Sign in (optional; Tree, levels and tell_trood work signed out):
+
+```bash
+trood-mcp login      # your Trood email and password; the session lasts about a day
+```
+
+Then run `/trood:start` in Claude Code (or the `start` prompt in other clients) to set Trood up for a project.
+
+## Usage analytics, only if you say yes
+
+Trood asks once: "May Trood record which Trood tools you use and whether they worked, so we can improve them? Never your code, files, documents or anything you type." Until you answer yes, nothing is sent.
+
+- What is sent: the tool or prompt name, its area and help level, whether it worked, how long it took, your MCP client and its version, your OS family and this server's version. Signed in, it is tied to your Trood account; signed out, it is anonymous.
+- What is never sent: tool arguments, file paths, repository or company names, code, document contents.
+- See what was sent: the `show_my_trood_data` tool, or `~/.trood/telemetry.jsonl`.
+- Change your answer: ask your agent ("Trood, stop sending usage"), or `trood-mcp analytics no`.
+- `DO_NOT_TRACK=1` or `TROOD_TELEMETRY=0` always wins: nothing is sent.
+
+`tell_trood` is different: it sends a message you choose to send, so it works whatever your analytics answer is.
+
+## Help levels
+
+Per area, per project: `launch`, `secrets`, `domains`, `estate`, `checks`, `watch`, `technology`, `help`, `tutorials`. Each is `guide` (explain and walk through), `hint` (one line, the default) or `quiet` (facts only, speaks only when a check fails). Say "stop explaining deploys" or "walk me through domains" and the agent changes it. Saved in `~/.trood/projects/`, keyed by a hash of the project's git remote; nothing about the project leaves your computer.
+
 ## Tools
+
+Trood itself:
+
+| Tool | What it does |
+|---|---|
+| `trood_whoami` | Who you are, your roles, your workspaces on platform.trood.com and which is active, and your analytics answer. Works signed out |
+| `use_workspace` | Chooses the active workspace on this computer |
+| `get_trood_levels`, `set_trood_level` | Help levels per area; offers you declined |
+| `decline_offer` | Remembers a no, so it is not offered again |
+| `set_trood_analytics`, `show_my_trood_data` | Your analytics answer, and what was sent |
+| `tell_trood` | A request, idea or complaint in your own words, to Trood's team |
+| `get_claude_md_block` | A short block for your project's CLAUDE.md (beginner or pro), so every session knows when to use Trood. Added only with your yes |
+
+Prompts: `start` (set Trood up for a project) and `launch` (put a project online with GitHub, Vercel and Railway; the agent runs the commands, you do only the steps that need you).
 
 Research and offers:
 
@@ -48,7 +97,6 @@ Your Trood work:
 
 | Tool | What it does |
 |---|---|
-| `trood_whoami` | Who you are on Trood, and your roles |
 | `list_projects` | Your projects and their status |
 | `get_project` | One project: stages, amounts, payments |
 | `get_project_context` | The project's goals, constraints, decisions and principles |
@@ -73,6 +121,7 @@ Where research lives: `~/.trood/companies/<domain>.json` and `<domain>.brief.md`
 ## How it is built
 
 - A plain TypeScript package on the official MCP SDK, not NestJS (ADR-014's stack for the platform API): it has no database and no routes of its own, so a framework would add nothing. It can be mounted in the NestJS service when that exists.
+- Usage events go to trood-identity's collector: signed in to `POST /users/me/events`, signed out to `POST /public/e` with product `mcp`. Messages from `tell_trood` go to the platform API (`POST /mcp/tell`), into Trood's event log and feed.
 - Sign-in goes through trood-identity (`POST /auth/login`), as ADR-014 requires; the session token is the Kratos session Product Engine accepts as a bearer. It is stored in `~/.trood/mcp-session.json`, readable by you only, or taken from `TROOD_SESSION_TOKEN`.
 - Service addresses can be overridden: `TROOD_IDENTITY_URL`, `TROOD_ENGINE_URL`, `TROOD_TREE_URL`, `TROOD_PLATFORM_URL`.
 
@@ -82,7 +131,7 @@ Where research lives: `~/.trood/companies/<domain>.json` and `<domain>.brief.md`
 npm run build && npm run check
 ```
 
-Runs the server under the SDK's own client: 46 checks. A fixture website ("Sample Retreat", with an injected instruction in its text) and a local Product Engine stub cover research, facts, privacy refusals, the brief, publishing and a Partner's 403; live calls cover the Technology Tree, a public website and a Product Engine refusal.
+Runs the server under the SDK's own client: 61 checks. A fixture website ("Sample Retreat", with an injected instruction in its text) and a local Product Engine stub cover research, facts, privacy refusals, the brief, publishing and a Partner's 403; live calls cover the Technology Tree, a public website and a Product Engine refusal.
 
 ## Not yet
 

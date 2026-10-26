@@ -5,6 +5,9 @@ import { createServer } from './server.js';
 import { identity, engine, TroodError } from './http.js';
 import { clearSession, readSession, writeSession } from './session.js';
 import { config } from './config.js';
+import { writeGlobal } from './prefs.js';
+import { consent, envBlocks } from './telemetry.js';
+import { CONSENT_QUESTION } from './trood-tools.js';
 
 const HELP = `trood-mcp: Trood's MCP server.
 
@@ -12,6 +15,9 @@ const HELP = `trood-mcp: Trood's MCP server.
   trood-mcp login      sign in with your Trood email and password; the session is saved for about a day
   trood-mcp status     check that you are signed in
   trood-mcp logout     sign out and delete the saved session
+  trood-mcp analytics yes|no|status
+                       whether Trood may record which Trood tools you use and whether
+                       they worked (never your code, files or what you type)
 `;
 
 function prompter() {
@@ -55,6 +61,26 @@ async function login(): Promise<void> {
   writeSession({ token: res.sessionToken, email, savedAt: new Date().toISOString() });
   const me = (await engine('/users/me').catch(() => null)) as { name?: string; roles?: string[] } | null;
   console.log(`Signed in as ${me?.name ?? email}${me?.roles?.length ? ` (${me.roles.join(', ')})` : ''}. Session saved to ${config.sessionFile}.`);
+  await askConsentOnce();
+}
+
+/** The analytics question, once, and only to a person at a terminal. */
+async function askConsentOnce(): Promise<void> {
+  if (consent() !== 'unset' || !process.stdin.isTTY) return;
+  const p = prompter();
+  let answer = '';
+  try { answer = (await p.ask(`${CONSENT_QUESTION} [y/n] `)).toLowerCase(); } catch { return; } finally { p.close(); }
+  const yes = answer === 'y' || answer === 'yes';
+  writeGlobal({ analytics: yes ? 'yes' : 'no', analyticsAnsweredAt: new Date().toISOString() });
+  console.log(yes ? 'Thank you. Change it any time with `trood-mcp analytics no`.' : 'Nothing will be sent. Change it any time with `trood-mcp analytics yes`.');
+}
+
+async function analytics(): Promise<void> {
+  const arg = (process.argv[3] ?? 'status').toLowerCase();
+  if (arg === 'yes' || arg === 'no') writeGlobal({ analytics: arg, analyticsAnsweredAt: new Date().toISOString() });
+  else if (arg !== 'status') throw new TroodError('Use `trood-mcp analytics yes`, `no` or `status`.');
+  const c = consent();
+  console.log(`Usage analytics: ${c}${envBlocks() ? ' (DO_NOT_TRACK or TROOD_TELEMETRY=0 is set, so nothing is sent)' : ''}.`);
 }
 
 async function status(): Promise<void> {
@@ -79,7 +105,7 @@ async function serve(): Promise<void> {
 }
 
 const cmd = process.argv[2];
-const commands: Record<string, () => Promise<void>> = { login, status, logout, serve };
+const commands: Record<string, () => Promise<void>> = { login, status, logout, serve, analytics };
 
 if (cmd === '--help' || cmd === '-h' || cmd === 'help') {
   process.stdout.write(HELP);

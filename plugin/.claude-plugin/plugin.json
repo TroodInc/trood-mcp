@@ -1,0 +1,16 @@
+{
+  "name": "trood",
+  "displayName": "Trood",
+  "version": "0.3.0",
+  "description": "The environment around your code: launch with GitHub, Vercel and Railway, secrets, domains, the systems you run, and Trood's people when you need them. Help that adapts per area, from guided to quiet.",
+  "author": { "name": "Trood", "email": "info@trood.com", "url": "https://trood.com" },
+  "homepage": "https://trood.com",
+  "license": "Apache-2.0",
+  "keywords": ["deploy", "vercel", "railway", "github", "launch", "infrastructure", "mcp"],
+  "mcpServers": {
+    "trood": {
+      "command": "npx",
+      "args": ["-y", "@trood/mcp@0.3"]
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "trood",
+  "owner": { "name": "Trood", "email": "info@trood.com", "url": "https://trood.com" },
+  "description": "Trood's plugins for Claude Code",
+  "plugins": [
+    {
+      "name": "trood",
+      "source": "./plugin",
+      "description": "The environment around your code, with help that adapts per area",
+      "category": "development"
+    }
+  ]
+}
