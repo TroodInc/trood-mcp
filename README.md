@@ -10,14 +10,14 @@ Trood pays for no model calls. Your credentials and research stay on your comput
 
 ## Install
 
-Not on npm yet: until it is, use the local install below.
-
 Claude Code, as a plugin (bundles the server, the `/trood:start` and `/trood:launch` commands, and a skill that routes environment questions to Trood):
 
 ```
-/plugin marketplace add <owner>/<repo>
+/plugin marketplace add TroodInc/trood-mcp
 /plugin install trood@trood
 ```
+
+Website: https://trood.com/mcp
 
 If you connected the older `trood` server by hand, remove it first so there is only one: `claude mcp remove trood`.
 
@@ -33,10 +33,10 @@ Claude Desktop, in `claude_desktop_config.json`:
 { "mcpServers": { "trood": { "command": "npx", "args": ["-y", "@troodinc/mcp"] } } }
 ```
 
-Local install, from this repository:
+From source:
 
 ```bash
-cd trood-platform-back/mcp
+git clone https://github.com/TroodInc/trood-mcp && cd trood-mcp
 npm install && npm run build && npm link   # makes the `trood-mcp` command available
 claude mcp add trood -- trood-mcp
 ```
@@ -44,7 +44,7 @@ claude mcp add trood -- trood-mcp
 Sign in (optional; Tree, levels and tell_trood work signed out):
 
 ```bash
-trood-mcp login      # your Trood email and password; the session lasts about a day
+npx @troodinc/mcp login   # your Trood email and password; the session lasts about a day
 ```
 
 Then run `/trood:start` in Claude Code (or the `start` prompt in other clients) to set Trood up for a project.
