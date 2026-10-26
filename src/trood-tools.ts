@@ -77,10 +77,15 @@ export function registerTroodTools(server: McpServer): void {
     if (!readSession()) {
       return json({ signedIn: false, howToSignIn: 'Run `trood-mcp login` in a terminal.', analytics: consent(), version: MCP_VERSION });
     }
+    const errors: string[] = [];
     const [user, me] = await Promise.all([
-      engine('/users/me').catch(() => null) as Promise<{ name?: string; roles?: string[] } | null>,
-      platform('/me').catch(() => null) as Promise<Me | null>,
+      engine('/users/me').catch((e: Error) => { errors.push(e.message); return null; }) as Promise<{ name?: string; roles?: string[] } | null>,
+      platform('/me').catch((e: Error) => { errors.push(e.message); return null; }) as Promise<Me | null>,
     ]);
+    // A saved but expired session is not a sign-in: say so, rather than an empty profile.
+    if (!user && !me) {
+      return json({ signedIn: false, reason: errors[0] ?? 'Trood did not recognise the saved session.', howToSignIn: 'Run `trood-mcp login` in a terminal.', analytics: consent(), version: MCP_VERSION });
+    }
     const workspaces = me?.workspaces ?? [];
     const savedId = readGlobal().activeWorkspaceId;
     const active = workspaces.find((w) => w.id === savedId) ?? workspaces.find((w) => w.kind === 'business') ?? workspaces[0] ?? null;
