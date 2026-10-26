@@ -24,13 +24,13 @@ If you connected the older `trood` server by hand, remove it first so there is o
 Any MCP client, with npx:
 
 ```bash
-claude mcp add trood -- npx -y @trood/mcp
+claude mcp add trood -- npx -y @troodinc/mcp
 ```
 
 Claude Desktop, in `claude_desktop_config.json`:
 
 ```json
-{ "mcpServers": { "trood": { "command": "npx", "args": ["-y", "@trood/mcp"] } } }
+{ "mcpServers": { "trood": { "command": "npx", "args": ["-y", "@troodinc/mcp"] } } }
 ```
 
 Local install, from this repository:

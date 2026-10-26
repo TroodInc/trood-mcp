@@ -10,7 +10,7 @@
   "mcpServers": {
     "trood": {
       "command": "npx",
-      "args": ["-y", "@trood/mcp@0.3"]
+      "args": ["-y", "@troodinc/mcp@0.3"]
     }
   }
 }
