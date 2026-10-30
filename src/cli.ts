@@ -5,6 +5,8 @@ import { createServer } from './server.js';
 import { identity, engine, TroodError } from './http.js';
 import { clearSession, readSession, writeSession } from './session.js';
 import { config } from './config.js';
+import { spawn } from 'node:child_process';
+import { revokeToken, startSignIn, waitForApproval } from './device.js';
 import { writeGlobal } from './prefs.js';
 import { consent, envBlocks } from './telemetry.js';
 import { CONSENT_QUESTION } from './trood-tools.js';
@@ -12,7 +14,10 @@ import { CONSENT_QUESTION } from './trood-tools.js';
 const HELP = `trood-mcp: Trood's MCP server.
 
   trood-mcp            run the server over stdio (what Claude Desktop and Claude Code start)
-  trood-mcp login      sign in with your Trood email and password; the session is saved for about a day
+  trood-mcp login      sign in through your browser: approve this computer on platform.trood.com
+                       (lasts 90 days; disconnect it any time under Connected tools on your page)
+  trood-mcp login --password
+                       sign in with your Trood email and password instead (lasts about a day)
   trood-mcp status     check that you are signed in
   trood-mcp logout     sign out and delete the saved session
   trood-mcp analytics yes|no|status
@@ -43,7 +48,26 @@ function prompter() {
   return { ask, close: () => rl.close() };
 }
 
+/** Opens a link in the person's browser; if that fails, the link is on screen to open by hand. */
+function openBrowser(url: string): void {
+  const cmd = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'cmd' : 'xdg-open';
+  const args = process.platform === 'win32' ? ['/c', 'start', '', url] : [url];
+  try { spawn(cmd, args, { stdio: 'ignore', detached: true }).on('error', () => undefined).unref(); } catch { /* shown on screen */ }
+}
+
 async function login(): Promise<void> {
+  if (process.argv.includes('--password')) return loginWithPassword();
+  const s = await startSignIn();
+  console.log(`To sign in, approve this computer on Trood:\n\n  ${s.link}\n\nCheck that the page shows this code: ${s.userCode}\nWaiting for your approval (the code expires in 10 minutes)...`);
+  openBrowser(s.link);
+  const result = await waitForApproval(10 * 60_000);
+  if (result.state !== 'approved') throw new TroodError(result.state === 'failed' ? result.reason : 'Not approved in time. Run `trood-mcp login` again.');
+  const me = (await engine('/users/me').catch(() => null)) as { name?: string; roles?: string[] } | null;
+  console.log(`Signed in${me?.name ? ` as ${me.name}` : ''}. This computer stays signed in for 90 days; disconnect it any time under Connected tools on platform.trood.com/me.`);
+  await askConsentOnce();
+}
+
+async function loginWithPassword(): Promise<void> {
   const p = prompter();
   let email: string, password: string;
   try {
@@ -93,7 +117,8 @@ async function status(): Promise<void> {
 async function logout(): Promise<void> {
   const session = readSession();
   if (session && session.savedAt !== 'env') {
-    await identity('/auth/logout', { method: 'POST', auth: true }).catch(() => undefined);
+    if (session.token.startsWith('trd_')) await revokeToken(session.token);
+    else await identity('/auth/logout', { method: 'POST', auth: true }).catch(() => undefined);
   }
   clearSession();
   console.log('Signed out.');

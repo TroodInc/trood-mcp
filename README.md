@@ -1,6 +1,6 @@
 # Trood MCP
 
-Version 0.3. Licensed under the Apache License 2.0 (see LICENSE).
+Version 0.4. Licensed under the Apache License 2.0 (see LICENSE).
 
 Trood for your coding agent. The agent writes the code; Trood takes care of the environment around it and of the people: putting a project online (GitHub, Vercel, Railway), secrets, domains, the systems a business runs, choosing technologies, and finding help. Help adapts per area, from a guided walkthrough for beginners to facts only for pros, and it never repeats an offer you turned down.
 
@@ -41,11 +41,13 @@ npm install && npm run build && npm link   # makes the `trood-mcp` command avail
 claude mcp add trood -- trood-mcp
 ```
 
-Sign in (optional; Tree, levels and tell_trood work signed out):
+Sign in (optional; Tree, levels and tell_trood work signed out). Either ask your agent ("sign me in to Trood"), or in a terminal:
 
 ```bash
-npx @troodinc/mcp login   # your Trood email and password; the session lasts about a day
+npx @troodinc/mcp login   # opens platform.trood.com: check the code and approve this computer
 ```
+
+You approve in your own browser; nobody types a password into a chat or a config file. The sign-in lasts 90 days, and you can disconnect it any time under Connected tools on platform.trood.com/me. A connected tool can read your work and prepare drafts; it can never pay, approve, invite people or send anything for you (Trood's services refuse it). `npx @troodinc/mcp login --password` keeps the old email-and-password sign-in.
 
 Then run `/trood:start` in Claude Code (or the `start` prompt in other clients) to set Trood up for a project.
 
@@ -72,6 +74,7 @@ Trood itself:
 | Tool | What it does |
 |---|---|
 | `trood_whoami` | Who you are, your roles, your workspaces on platform.trood.com and which is active, and your analytics answer. Works signed out |
+| `trood_sign_in`, `trood_sign_in_status` | Sign in through your browser: a link and a code to approve on platform.trood.com |
 | `use_workspace` | Chooses the active workspace on this computer |
 | `get_trood_levels`, `set_trood_level` | Help levels per area; offers you declined |
 | `decline_offer` | Remembers a no, so it is not offered again |

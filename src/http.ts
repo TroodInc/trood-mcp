@@ -6,9 +6,9 @@ export class TroodError extends Error {
 }
 
 const NO_SESSION =
-  'You are not signed in to Trood. Run `trood-mcp login` in a terminal, then try again.';
+  'You are not signed in to Trood. Ask your agent to sign you in (trood_sign_in), or run `npx @troodinc/mcp login` in a terminal.';
 const EXPIRED =
-  'Your Trood session has expired or was signed out (sessions last about a day). Run `trood-mcp login` again.';
+  'Your Trood sign-in has expired or was disconnected. Ask your agent to sign you in again (trood_sign_in), or run `npx @troodinc/mcp login`.';
 
 async function call(base: string, path: string, init: RequestInit & { auth?: boolean } = {}): Promise<unknown> {
   const headers = new Headers(init.headers);

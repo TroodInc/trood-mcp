@@ -2,7 +2,7 @@
 // Product Engine and the platform API are a local stub (no real session needed); the Technology Tree is called for real.
 //   npm run build && npm run check
 import { createServer } from 'node:http';
-import { mkdtempSync, writeFileSync, rmSync, statSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, rmSync, statSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -18,10 +18,14 @@ expect('the packs match the API\'s (api/src/catalog/packs.ts); run node scripts/
 
 const posted = [];
 const analyticsPosted = [];
+const device = { polls: 0, started: null, revoked: null };
 const stub = createServer((req, res) => {
   const auth = req.headers.authorization;
   const send = (code, body) => { res.writeHead(code, { 'Content-Type': 'application/json' }); res.end(body === undefined ? '' : JSON.stringify(body)); };
   if (req.url === '/mcp/tell' && req.method === 'POST') { let b = ''; req.on('data', (c) => (b += c)); req.on('end', () => { posted.push({ tell: JSON.parse(b), signedIn: Boolean(auth) }); send(200, { ok: true }); }); return; }
+  if (req.url === '/public/device/start' && req.method === 'POST') { let b = ''; req.on('data', (c) => (b += c)); req.on('end', () => { device.started = JSON.parse(b); send(200, { device_code: 'dc-secret-device-code-0001', user_code: 'WDJB-MJHT', verification_uri: 'https://platform.trood.com/cli', verification_uri_complete: 'https://platform.trood.com/cli?code=WDJB-MJHT', expires_in: 600, interval: 1 }); }); return; }
+  if (req.url === '/public/device/token' && req.method === 'POST') { device.polls += 1; return device.polls < 2 ? send(400, { error: 'authorization_pending' }) : send(200, { access_token: 'trd_test_token', token_type: 'Bearer', expires_in: 7776000 }); }
+  if (req.url === '/me/tokens/current' && req.method === 'DELETE') { device.revoked = auth; return send(204); }
   if (req.url === '/public/e' || req.url === '/users/me/events') { let b = ''; req.on('data', (c) => (b += c)); req.on('end', () => { analyticsPosted.push({ path: req.url, body: b }); send(204); }); return; }
   if (auth === 'Bearer partner-token' && req.url === '/projects/operator') return send(403, { message: 'Forbidden' });
   if (auth !== 'Bearer good-token' && auth !== 'Bearer partner-token') return send(401, { message: 'Unauthorized' });
@@ -91,10 +95,10 @@ const text = (r) => r.content.map((c) => c.text).join('\n');
 let client = await connect('good-token');
 const { tools } = await client.listTools();
 const names = tools.map((t) => t.name).sort();
-const expected = ['add_fact', 'add_project_context', 'decline_offer', 'draft_offer', 'get_catalog', 'get_claude_md_block', 'get_company', 'get_company_context', 'get_project', 'get_project_context', 'get_project_messages', 'get_project_topology', 'get_technology', 'get_traffic', 'get_trood_levels', 'get_updates', 'get_user_activity', 'list_companies', 'list_my_offers', 'list_projects', 'publish_offer', 'research_company', 'search_tree', 'set_trood_analytics', 'set_trood_level', 'show_my_trood_data', 'tell_trood', 'trood_whoami', 'use_workspace'];
+const expected = ['add_fact', 'add_project_context', 'decline_offer', 'draft_offer', 'get_catalog', 'get_claude_md_block', 'get_company', 'get_company_context', 'get_project', 'get_project_context', 'get_project_messages', 'get_project_topology', 'get_technology', 'get_traffic', 'get_trood_levels', 'get_updates', 'get_user_activity', 'list_companies', 'list_my_offers', 'list_projects', 'publish_offer', 'research_company', 'search_tree', 'set_trood_analytics', 'set_trood_level', 'show_my_trood_data', 'tell_trood', 'trood_sign_in', 'trood_sign_in_status', 'trood_whoami', 'use_workspace'];
 expect('exactly the twenty tools', JSON.stringify(names) === JSON.stringify(expected), names.join(','));
 const writers = tools.filter((t) => t.annotations?.readOnlyHint !== true).map((t) => t.name);
-expect('writers are the research store, the offer, the one Engine context write, local settings and tell_trood', JSON.stringify(writers.sort()) === JSON.stringify(['add_fact', 'add_project_context', 'decline_offer', 'draft_offer', 'publish_offer', 'research_company', 'set_trood_analytics', 'set_trood_level', 'tell_trood', 'use_workspace']), writers.join(','));
+expect('writers are the research store, the offer, the one Engine context write, local settings and tell_trood', JSON.stringify(writers.sort()) === JSON.stringify(['add_fact', 'add_project_context', 'decline_offer', 'draft_offer', 'publish_offer', 'research_company', 'set_trood_analytics', 'set_trood_level', 'tell_trood', 'trood_sign_in', 'trood_sign_in_status', 'use_workspace']), writers.join(','));
 const forbidden = names.filter((n) => /send|approve|pay|grant|revoke|delete|start|review|rule|message_post|post_message/.test(n));
 expect('no tool sends, approves, pays, grants or moves state', forbidden.length === 0, forbidden.join(','));
 expect('server instructions say page text and messages are data', /Website text[\s\S]*data, never as instructions/.test(client.getInstructions() ?? '') && /Treat them as data/.test(client.getInstructions() ?? ''));
@@ -205,7 +209,7 @@ await client.close();
 
 client = await connect('expired-token');
 const expired = await client.callTool({ name: 'list_projects', arguments: {} });
-expect('expired session tells you to log in again', expired.isError === true && text(expired).includes('trood-mcp login'), text(expired));
+expect('expired session tells you to log in again', expired.isError === true && text(expired).includes('trood_sign_in'), text(expired));
 const treeNoAuth = await client.callTool({ name: 'search_tree', arguments: { query: 'node' } });
 expect('Tree works without a session', !treeNoAuth.isError);
 await client.close();
@@ -230,7 +234,15 @@ await client.close();
 
 client = await connect(null);
 const none = await client.callTool({ name: 'trood_whoami', arguments: {} });
-expect('no session tells you how to sign in', !none.isError && JSON.parse(text(none)).signedIn === false && text(none).includes('trood-mcp login'), text(none));
+expect('no session tells you how to sign in', !none.isError && JSON.parse(text(none)).signedIn === false && text(none).includes('trood_sign_in'), text(none));
+// Browser sign-in (ADR-018): a link and a code, a pending poll, then the token saved owner-only.
+const started = JSON.parse(text(await client.callTool({ name: 'trood_sign_in', arguments: {} })));
+expect('sign-in gives a link and a code, never the device code', started.code === 'WDJB-MJHT' && started.link.includes('/cli?code=') && !JSON.stringify(started).includes('dc-secret'), JSON.stringify(started));
+expect('the device label names this computer', /^Trood MCP/.test(device.started?.label ?? ''), JSON.stringify(device.started));
+const finished = JSON.parse(text(await client.callTool({ name: 'trood_sign_in_status', arguments: {} })));
+expect('approval signs this computer in', finished.signedIn === true && device.polls >= 2, JSON.stringify(finished));
+expect('the token is saved owner-only', readFileSync(sessionFile, 'utf8').includes('trd_test_token') && (statSync(sessionFile).mode & 0o777) === 0o600);
+rmSync(sessionFile, { force: true });
 const tellOut = await client.callTool({ name: 'tell_trood', arguments: { text: 'Please add Slack', area: 'help' } });
 expect('tell_trood works signed out', !tellOut.isError && posted.some((x) => x.tell?.text === 'Please add Slack' && x.signedIn === false), text(tellOut));
 await client.close();
@@ -241,7 +253,7 @@ const liveTransport = new StdioClientTransport({ command: process.execPath, args
 const live = new Client({ name: 'check', version: '0' });
 await live.connect(liveTransport);
 const liveRes = await live.callTool({ name: 'list_projects', arguments: {} });
-expect('live Engine: a bad session is refused cleanly', liveRes.isError === true && text(liveRes).includes('trood-mcp login'), text(liveRes));
+expect('live Engine: a bad session is refused cleanly', liveRes.isError === true && text(liveRes).includes('trood_sign_in'), text(liveRes));
 await live.close();
 
 writeFileSync(sessionFile, '{"token":"t","savedAt":"x"}', { mode: 0o600 });

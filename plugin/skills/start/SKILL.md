@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 Set up Trood for this project, briefly:
 
-1. Call `trood_whoami`. If I am not signed in, tell me to run `trood-mcp login` in a terminal (or `npx @troodinc/mcp login`), and carry on with what works signed out.
+1. Call `trood_whoami`. If I am not signed in, offer to sign me in with `trood_sign_in`: show me the link and the code, I approve in my browser, then call `trood_sign_in_status`. If I prefer not to, carry on with what works signed out.
 2. If analytics is "unset", ask me exactly once: "May Trood record which Trood tools you use and whether they worked, so we can improve them? Never your code, files, documents or anything you type. Yes or no?" Record my answer with `set_trood_analytics`. Never answer for me.
 3. Ask one question: "Do you want me to do things with you, or just keep an eye on things?" Doing things together means `guide`; keeping an eye means `quiet`. Set that level for launch, secrets, domains, estate, checks and watch with `set_trood_level`. I can change any area later.
 4. Offer the CLAUDE.md block from `get_claude_md_block` (beginner for guide, pro for quiet). Add it to CLAUDE.md only if I say yes.

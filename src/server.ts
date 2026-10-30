@@ -30,7 +30,7 @@ Scope: Trood is for the environment around the code and for people: launching, d
 Help levels: Trood helps per area (launch, secrets, domains, estate, checks, watch, technology, help, tutorials) at guide, hint or quiet. Check get_trood_levels before offering help, explanations or tutorials, follow the level, and never repeat an offer the person declined (record a no with decline_offer). When the person says "stop explaining X" or "walk me through X", call set_trood_level.
 Usage analytics: do not bring it up yourself; the "start" prompt and \`trood-mcp login\` ask the person once. Until they say yes, nothing is sent. If the person raises it ("stop sending usage", "yes, you can record"), record exactly what they said with set_trood_analytics; never answer for them.
 Telling Trood: when the person wants something Trood cannot do yet, or something failed, offer tell_trood with their own words.
-Prompts: "start" sets Trood up for a project; "launch" puts a project online with GitHub, Vercel and Railway.`;
+Signing in: offer trood_sign_in (the person approves in their own browser); never ask for a password. Prompts: "start" sets Trood up for a project; "launch" puts a project online with GitHub, Vercel and Railway.`;
 
 type Result = { content: { type: 'text'; text: string }[]; isError?: boolean };
 

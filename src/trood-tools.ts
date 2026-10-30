@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { engine, platform, TroodError } from './http.js';
 import { AREAS, decline, DEFAULT_LEVEL, LEVEL_MEANING, LEVELS, levelOf, readGlobal, readProject, setLevel, writeGlobal, type Area, type Level } from './prefs.js';
 import { readSession } from './session.js';
+import { pendingSignIn, pollOnce, startSignIn, waitForApproval } from './device.js';
 import { config } from './config.js';
 import { consent, envBlocks, MCP_VERSION, readLog, track } from './telemetry.js';
 
@@ -75,7 +76,7 @@ export function registerTroodTools(server: McpServer): void {
     annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
   }, () => run(async () => {
     if (!readSession()) {
-      return json({ signedIn: false, howToSignIn: 'Run `trood-mcp login` in a terminal.', analytics: consent(), version: MCP_VERSION });
+      return json({ signedIn: false, howToSignIn: 'Ask me to sign you in (trood_sign_in), or run `npx @troodinc/mcp login` in a terminal.', analytics: consent(), version: MCP_VERSION });
     }
     const errors: string[] = [];
     const [user, me] = await Promise.all([
@@ -84,7 +85,7 @@ export function registerTroodTools(server: McpServer): void {
     ]);
     // A saved but expired session is not a sign-in: say so, rather than an empty profile.
     if (!user && !me) {
-      return json({ signedIn: false, reason: errors[0] ?? 'Trood did not recognise the saved session.', howToSignIn: 'Run `trood-mcp login` in a terminal.', analytics: consent(), version: MCP_VERSION });
+      return json({ signedIn: false, reason: errors[0] ?? 'Trood did not recognise the saved session.', howToSignIn: 'Ask me to sign you in (trood_sign_in), or run `npx @troodinc/mcp login` in a terminal.', analytics: consent(), version: MCP_VERSION });
     }
     const workspaces = me?.workspaces ?? [];
     const savedId = readGlobal().activeWorkspaceId;
@@ -99,6 +100,28 @@ export function registerTroodTools(server: McpServer): void {
       analytics: consent(),
       version: MCP_VERSION,
     });
+  }));
+
+  server.registerTool('trood_sign_in', {
+    title: 'Sign in to Trood through the browser',
+    description: 'Starts a sign-in the person approves in their own browser on platform.trood.com: returns a link and a short code. Show both to the person, ask them to open the link, check the code matches and approve, then call trood_sign_in_status. Never ask for their password. The sign-in lasts 90 days and can be disconnected from their page on the platform.',
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+  }, () => run(async () => {
+    const s = await startSignIn();
+    return json({ link: s.link, code: s.userCode, expiresInMinutes: Math.round((s.expiresAt - Date.now()) / 60000), next: 'Ask the person to open the link, check the code and approve; then call trood_sign_in_status.' });
+  }));
+
+  server.registerTool('trood_sign_in_status', {
+    title: 'Finish signing in to Trood',
+    description: 'Checks whether the person approved the sign-in started with trood_sign_in, waiting up to about 25 seconds. On approval this computer is signed in. If it is still pending, ask the person whether they approved, then call it again.',
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+  }, () => run(async () => {
+    if (!pendingSignIn()) return json({ signedIn: Boolean(readSession()), note: readSession() ? 'Already signed in.' : 'No sign-in is waiting. Start one with trood_sign_in.' });
+    const first = await pollOnce();
+    const result = first.state === 'pending' ? await waitForApproval(25_000) : first;
+    if (result.state === 'approved') return json({ signedIn: true, note: 'Signed in. It lasts 90 days; the person can disconnect it under Connected tools on platform.trood.com/me.' });
+    if (result.state === 'pending') return json({ signedIn: false, pending: true, note: 'Not approved yet. Ask the person whether they approved on the page, then call this again.' });
+    return fail(result.reason);
   }));
 
   server.registerTool('use_workspace', {
@@ -210,7 +233,7 @@ export function registerTroodTools(server: McpServer): void {
           type: 'text',
           text: [
             'Set up Trood for this project, briefly:',
-            '1. Call trood_whoami. If I am not signed in, tell me to run `trood-mcp login` in a terminal and continue with what works signed out.',
+            '1. Call trood_whoami. If I am not signed in, offer to sign me in with trood_sign_in (I approve it in my browser); if I prefer not to, continue with what works signed out.',
             `2. If analytics is "unset", ask me exactly this once: "${CONSENT_QUESTION}" and record my answer with set_trood_analytics. Do not ask again.`,
             '3. Ask one question: "Do you want me to do things with you, or just keep an eye on things?" Doing things together means guide; keeping an eye means quiet. Set that level for launch, secrets, domains, estate, checks and watch with set_trood_level. I can change any area later.',
             '4. Offer the CLAUDE.md block (get_claude_md_block, beginner for guide, pro for quiet). Add it to CLAUDE.md only if I say yes.',
