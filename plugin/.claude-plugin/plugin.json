@@ -1,7 +1,7 @@
 {
   "name": "trood",
   "displayName": "Trood",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "The environment around your code: launch with GitHub, Vercel and Railway, secrets, domains, the systems you run, and Trood's people when you need them. Help that adapts per area, from guided to quiet.",
   "author": {
     "name": "Trood",

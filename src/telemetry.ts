@@ -17,7 +17,7 @@ import { readSession } from './session.js';
  * is also written to a local log the person can read (show_my_trood_data).
  */
 
-export const MCP_VERSION = '0.4.0';
+export const MCP_VERSION = '0.4.1';
 const LOG_KEEP = 200;
 
 export type Consent = 'yes' | 'no' | 'unset';
