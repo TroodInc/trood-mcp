@@ -37,7 +37,7 @@ const stub = createServer((req, res) => {
   if (p === '/workspaces/pw/offers' && req.method === 'POST') { let b = ''; req.on('data', (c) => (b += c)); req.on('end', () => { posted.push({ offer: JSON.parse(b) }); send(201, { token: 'offer-token', link: 'https://platform.trood.com/d/offer-token' }); }); return; }
   if (p === '/offers/submit' && req.method === 'POST') { let b = ''; req.on('data', (c) => (b += c)); req.on('end', () => { posted.push({ submit: JSON.parse(b) }); send(201, { status: 'review', message: 'Sent to Trood. When we create the link, we email it to you to send.' }); }); return; }
   if (p === '/offers/mine') return send(200, { offers: [{ companyName: 'Sample Retreat', headline: 'Answering every guest in minutes at Sample Retreat', status: 'review', link: null }] });
-  if (p === '/projects') return send(200, { projects: [{ id: 'p1', title: 'Sample Retreat answers', status: 'in_progress', contactEmail: 'owner@example.com' }] });
+  if (p === '/projects') return send(200, { projects: [{ id: 'p1', title: 'Sample Retreat answers', status: 'in_progress', contactEmail: 'owner@example.com' }, { id: 'p2', title: 'Second project, call +971 50 000 0000', status: 'scoping', customer: { id: 'c2', name: 'nameless@example.com' }, request: { problemDescription: 'Write to me at written@example.com' } }] });
   if (p === '/projects/p1') return send(200, { id: 'p1', title: 'Sample Retreat answers', status: 'in_progress', requestContact: { email: 'owner@example.com', phone: '+62 000' }, customer: { id: 'c1', name: 'Made', email: 'made@example.com' }, milestones: [{ id: 'm1', title: 'Answer flow', status: 'review', paymentAmount: 1000 }], payments: [{ id: 'pay1', type: 'milestone_upfront', status: 'paid', stripeCheckoutUrl: 'https://checkout.example/x' }] });
   if (p === '/projects/p1/context' && req.method === 'GET') return send(200, [{ id: 'e1', type: 'goal', text: 'Answer every guest within five minutes' }]);
   if (p === '/projects/p1/context' && req.method === 'POST') {
@@ -139,6 +139,7 @@ expect('project has no contact details or checkout links', !/@example\.com|\+62|
 
 const list = text(await client.callTool({ name: 'list_projects', arguments: {} }));
 expect('list projects, no contact email', list.includes('Sample Retreat answers') && !list.includes('owner@example.com'), list);
+expect('list projects, no email used as a name or written in a description, no phone', list.includes('Second project') && !/nameless@|written@|\+971/.test(list), list);
 expect('project context', text(await client.callTool({ name: 'get_project_context', arguments: { projectId: 'p1' } })).includes('five minutes'));
 const company = text(await client.callTool({ name: 'get_company_context', arguments: {} }));
 expect('company context', company.includes('Show customers only what works') && company.includes('Trood'), company);
