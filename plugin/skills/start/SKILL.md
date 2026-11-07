@@ -13,7 +13,7 @@ Set Trood up for me, briefly. Plain words, one question at a time, no jargon, an
 
 2. **Pick the path from the answers.**
    - **I write or read the code myself:** set launch, secrets, domains, estate, checks and watch to `quiet` with `set_trood_level`. Infrastructure follows Trood's cookbook when I ask; do not list tools at me.
-   - **Someone else writes the code:** set those areas to `guide`. My business decisions need one place: decisions, priorities, and what the team promised and by when. If I have no such place, suggest a board, found with `search_tree` ("project management"). Technology goes on the board only when it changes a business decision: a deadline, a cost or a risk.
+   - **Someone else writes the code:** set those areas to `guide`. My business decisions need one place: decisions, priorities, and what the team promised and by when. If I have no such place, offer to set up a decision board in my Trello now (`/trood:board`: `connect_trello`, then `setup_board`). If I say no, call `decline_offer` with area `board` and kind "board". Technology goes on the board only when it changes a business decision: a deadline, a cost or a risk.
 
 3. **Gaps.** For anything I said takes my time or I do not have (a board, talking to the team, email, sales, design, booking calls), look it up with `search_tree` using these words: a board "project management", talking to the team "messaging", email "email", sales "sales", design "design", booking calls "scheduling". Suggest at most one tool per gap, in one line each, saying Trood runs on it too when the Tree links it to Trood. Never suggest replacing something that works. Two suggestions at most in this first run.
 
