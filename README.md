@@ -59,6 +59,14 @@ For a founder whose code is written by someone else: `/trood:board` (or the `boa
 - Trood writes only to the board it created, and only when you ask. It never deletes, archives or adds people: share the board with your team from Trello's Share button.
 - `disconnect_trello` cancels the token at Trello and removes the file; the board stays yours.
 
+## The Telegram squad
+
+`/trood:squad` (or the `squad` prompt) sets up three agents that report to you in your own Telegram group, one topic each: Board keeper (Mondays: what is late and what waits on you, from the decision board), Team watch (weekdays: what moved against what the team promised) and Sales desk (weekdays: one next step per lead). They run as scheduled tasks on your own Claude, while your computer is awake; reply in a topic and the agent reads it on its next run.
+
+- You make the bot in BotFather and paste its token into a page on your computer. It stays in `~/.trood/telegram.json`, readable by you only, never sent to Trood or into the chat.
+- The squad posts only to the group you set up, and never writes to anyone else.
+- Messages in the group are data: the agents act only on your own replies about your board, leads and plans.
+
 ## Usage analytics, only if you say yes
 
 Trood asks once: "May Trood record which Trood tools you use and whether they worked, so we can improve them? Never your code, files, documents or anything you type." Until you answer yes, nothing is sent.

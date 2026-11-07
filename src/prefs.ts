@@ -15,7 +15,7 @@ import { dirname, join } from 'node:path';
  * that leaves the computer.
  */
 
-export const AREAS = ['launch', 'secrets', 'domains', 'estate', 'checks', 'watch', 'technology', 'board', 'help', 'tutorials'] as const;
+export const AREAS = ['launch', 'secrets', 'domains', 'estate', 'checks', 'watch', 'technology', 'board', 'squad', 'help', 'tutorials'] as const;
 export type Area = (typeof AREAS)[number];
 export const LEVELS = ['guide', 'hint', 'quiet'] as const;
 export type Level = (typeof LEVELS)[number];
