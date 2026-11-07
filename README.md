@@ -49,7 +49,7 @@ npx @troodinc/mcp login   # opens platform.trood.com: check the code and approve
 
 You approve in your own browser; nobody types a password into a chat or a config file. The sign-in lasts 90 days, and you can disconnect it any time under Connected tools on platform.trood.com/me. A connected tool can read your work and prepare drafts; it can never pay, approve, invite people or send anything for you (Trood's services refuse it). `npx @troodinc/mcp login --password` keeps the old email-and-password sign-in.
 
-Then run `/trood:start` in Claude Code (or the `start` prompt in other clients) to set Trood up for a project.
+Then run `/trood:start` in Claude Code (or the `start` prompt in other clients). It asks three questions (what you are building, who builds it, what takes most of your time), sets Trood up to match, suggests at most two tools you are missing from the Technology Tree, and offers to list your product on the Tree.
 
 ## Usage analytics, only if you say yes
 

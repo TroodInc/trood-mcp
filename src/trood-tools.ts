@@ -223,7 +223,7 @@ export function registerTroodTools(server: McpServer): void {
 
   server.registerPrompt('start', {
     title: 'Set up Trood for this project',
-    description: 'First run: check the sign-in, ask once about usage analytics, set how much help to give, and offer the CLAUDE.md block.',
+    description: 'First run: three questions about what you build, who builds it and what takes your time; then help levels, missing tools from the Technology Tree, sign-in, analytics, the CLAUDE.md block and an offer to list your product.',
   }, () => {
     track('mcp_prompt', { prompt: 'start' });
     return {
@@ -232,12 +232,14 @@ export function registerTroodTools(server: McpServer): void {
         content: {
           type: 'text',
           text: [
-            'Set up Trood for this project, briefly:',
-            '1. Call trood_whoami. If I am not signed in, offer to sign me in with trood_sign_in (I approve it in my browser); if I prefer not to, continue with what works signed out.',
-            `2. If analytics is "unset", ask me exactly this once: "${CONSENT_QUESTION}" and record my answer with set_trood_analytics. Do not ask again.`,
-            '3. Ask one question: "Do you want me to do things with you, or just keep an eye on things?" Doing things together means guide; keeping an eye means quiet. Set that level for launch, secrets, domains, estate, checks and watch with set_trood_level. I can change any area later.',
-            '4. Offer the CLAUDE.md block (get_claude_md_block, beginner for guide, pro for quiet). Add it to CLAUDE.md only if I say yes.',
-            'Keep it short. Do not explain Trood at length.',
+            'Set Trood up for me, briefly. Plain words, one question at a time, no jargon, and do not explain Trood at length.',
+            '1. Ask three questions, one at a time (if there is a project in this folder, read what it is and what it runs on yourself and skip what you know): "What are you building, in a sentence?", "Who builds it: you, your own team, or an outside team?", "What takes most of your time right now: the product, the team, or sales?"',
+            '2. If I write or read the code myself: set launch, secrets, domains, estate, checks and watch to quiet with set_trood_level; infrastructure follows Trood\'s cookbook when I ask. If someone else writes it: set them to guide; my business decisions need one place (decisions, priorities, what the team promised and by when). If I have none, suggest a board found with search_tree ("project management"); technology goes on it only when it changes a deadline, a cost or a risk.',
+            '3. For anything I said takes my time or I do not have, look it up with search_tree and suggest at most one tool per gap, two in this first run, saying Trood runs on it too when the Tree links it to Trood. Never suggest replacing something that works.',
+            `4. Call trood_whoami; if I am not signed in, offer trood_sign_in (I approve in my browser). If analytics is "unset", ask me exactly this once: "${CONSENT_QUESTION}" and record my answer with set_trood_analytics.`,
+            '5. Offer the CLAUDE.md block (get_claude_md_block, beginner for guide, pro for quiet). Add it to CLAUDE.md only if I say yes.',
+            '6. Check with search_tree whether my product is on Trood\'s Technology Tree. If not, offer once that I can list it at platform.trood.com/provide in my own words, and on launchpad.trood.com if I sell a service. Publish nothing yourself; if I say no, call decline_offer with kind "listing".',
+            '7. End with one next step for what takes most of my time.',
           ].join('\n'),
         },
       }],
