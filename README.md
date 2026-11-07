@@ -51,6 +51,14 @@ You approve in your own browser; nobody types a password into a chat or a config
 
 Then run `/trood:start` in Claude Code (or the `start` prompt in other clients). It asks three questions (what you are building, who builds it, what takes most of your time), sets Trood up to match, suggests at most two tools you are missing from the Technology Tree, and offers to list your product on the Tree.
 
+## The decision board
+
+For a founder whose code is written by someone else: `/trood:board` (or the `board` prompt) connects your Trello and creates a private board, "<your product>: decisions", with lists for this week's decisions, decided, promised by the team, waiting, risks and done. Ask Claude to read it every Monday: what is late, what waits on you, what changed.
+
+- Connecting opens a page on your computer; you click Allow in Trello. The token is saved in `~/.trood/trello.json`, readable by you only, and never goes to Trood or into the chat.
+- Trood writes only to the board it created, and only when you ask. It never deletes, archives or adds people: share the board with your team from Trello's Share button.
+- `disconnect_trello` cancels the token at Trello and removes the file; the board stays yours.
+
 ## Usage analytics, only if you say yes
 
 Trood asks once: "May Trood record which Trood tools you use and whether they worked, so we can improve them? Never your code, files, documents or anything you type." Until you answer yes, nothing is sent.

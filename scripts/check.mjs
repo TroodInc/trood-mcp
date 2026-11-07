@@ -286,7 +286,7 @@ const trello = createServer((req, res) => {
 await new Promise((r) => trello.listen(0, '127.0.0.1', r));
 const trHome = join(dir, 'trello-home');
 const trPort = 47000 + Math.floor(Math.random() * 900);
-const trTransport = new StdioClientTransport({ command: process.execPath, args: [join(here, '..', 'dist', 'cli.js')], env: { ...process.env, TROOD_HOME: trHome, TROOD_SESSION_FILE: sessionFile, TROOD_TRELLO_API: `http://127.0.0.1:${trello.address().port}`, TROOD_TRELLO_KEY: 'testkey', TROOD_TRELLO_PORT: String(trPort), TROOD_ENGINE_URL: engineUrl, TROOD_IDENTITY_URL: engineUrl } });
+const trTransport = new StdioClientTransport({ command: process.execPath, args: [join(here, '..', 'dist', 'cli.js')], env: { ...process.env, TROOD_HOME: trHome, TROOD_SESSION_FILE: sessionFile, TROOD_TRELLO_API: `http://127.0.0.1:${trello.address().port}`, TROOD_TRELLO_KEY: 'testkey', TROOD_TRELLO_CALLBACK: '0', TROOD_TRELLO_PORT: String(trPort), TROOD_ENGINE_URL: engineUrl, TROOD_IDENTITY_URL: engineUrl } });
 const tc = new Client({ name: 'check', version: '0' });
 await tc.connect(trTransport);
 const noBoard = await tc.callTool({ name: 'setup_board', arguments: { project: 'Yoga app' } });

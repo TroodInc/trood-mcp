@@ -25,14 +25,15 @@ import { trood } from './prefs.js';
 
 const API = () => process.env.TROOD_TRELLO_API ?? 'https://api.trello.com/1';
 /**
- * Trood's Trello app key. Public by design (Trello app keys are not secrets);
- * the token each person grants is. Until Trood's Power-Up lists
- * http://localhost:47431 as an allowed origin, the connect page uses the paste
- * flow: Trello shows the token, the person pastes it into the page on their
- * own computer.
+ * Trood's Trello app key (the "Trood" app in the TROOD workspace, made
+ * 2026-11-07). Public by design: Trello app keys are not secrets; the token each
+ * person grants is. Its allowed origins list http://localhost:47431, so Trello
+ * sends the person straight back to the connect page with the token after they
+ * click Allow. TROOD_TRELLO_CALLBACK=0 falls back to pasting the token into that
+ * page (never the chat).
  */
-const KEY = () => process.env.TROOD_TRELLO_KEY ?? '';
-const CALLBACK = () => process.env.TROOD_TRELLO_CALLBACK === '1';
+const KEY = () => process.env.TROOD_TRELLO_KEY ?? 'd4f9569348523c56505aef97fb10b6bb';
+const CALLBACK = () => process.env.TROOD_TRELLO_CALLBACK !== '0';
 const PORT = () => Number(process.env.TROOD_TRELLO_PORT ?? 47431);
 
 /** The lists, left to right. Keys are what the tools take. */
@@ -212,7 +213,8 @@ function needBoard(): Store & { board: NonNullable<Store['board']> } {
   return s as Store & { board: NonNullable<Store['board']> };
 }
 
-const day = (d: string) => /^\d{4}-\d{2}-\d{2}$/.test(d) ? `${d}T17:00:00.000Z` : d;
+// Noon UTC: the same calendar day from California to Bali.
+const day = (d: string) => /^\d{4}-\d{2}-\d{2}$/.test(d) ? `${d}T12:00:00.000Z` : d;
 
 /* ── Tools ───────────────────────────────────────────────────────────────── */
 
@@ -294,7 +296,7 @@ export function registerTrelloTools(server: McpServer): void {
     const out = {
       board: s.board.url,
       late: open.filter((c) => c.due && !c.dueComplete && Date.parse(c.due) < now).map(view),
-      dueThisWeek: open.filter((c) => c.due && !c.dueComplete && Date.parse(c.due) >= now && Date.parse(c.due) < now + 7 * 86400_000).map(view),
+      dueThisWeek: open.filter((c) => c.due && !c.dueComplete && Date.parse(c.due) >= now && c.due.slice(0, 10) <= new Date(now + 7 * 86400_000).toISOString().slice(0, 10)).map(view),
       toDecide: open.filter((c) => byList[c.idList] === 'decide').map(view),
       waiting: open.filter((c) => byList[c.idList] === 'waiting').map(view),
       risks: open.filter((c) => byList[c.idList] === 'risks').map(view),
@@ -320,7 +322,7 @@ export function registerTrelloTools(server: McpServer): void {
   }, ({ list, title, details, due, labels }) => run(async () => {
     const s = needBoard();
     const ids = [...(labels ?? []), 'claude' as LabelKey].map((k) => s.board.labels[k]).filter(Boolean).join(',');
-    const c = await call<{ id: string; shortUrl: string }>('POST', '/cards', { idList: s.board.lists[list], name: title, desc: details, due: due ? day(due) : undefined, idLabels: ids || undefined, pos: 'top' });
+    const c = await call<{ id: string; shortUrl: string }>('POST', '/cards', { idList: s.board.lists[list], name: title, desc: details, due: due ? day(due) : undefined, idLabels: ids || undefined, pos: 'bottom' });
     return json({ added: true, id: c.id, link: c.shortUrl, list: LISTS[list] });
   }));
 
