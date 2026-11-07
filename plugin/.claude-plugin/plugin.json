@@ -24,7 +24,7 @@
       "command": "npx",
       "args": [
         "-y",
-        "@troodinc/mcp@0.5"
+        "@troodinc/mcp@0.6"
       ]
     }
   }
