@@ -1,6 +1,7 @@
 {
   "name": "@troodinc/mcp",
-  "version": "0.6.0",
+  "version": "0.6.1",
+  "mcpName": "io.github.TroodInc/trood-mcp",
   "description": "Trood MCP: the environment around your code (launch, deploys, secrets, domains, the systems you run), help that adapts per area, Trood's people, and offers researched on your own model",
   "type": "module",
   "bin": {

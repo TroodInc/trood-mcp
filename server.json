@@ -1,0 +1,22 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.TroodInc/trood-mcp",
+  "title": "Trood MCP",
+  "description": "The environment around your code: launch, secrets, domains, the systems you run, and people.",
+  "repository": {
+    "url": "https://github.com/TroodInc/trood-mcp",
+    "source": "github"
+  },
+  "websiteUrl": "https://trood.com/mcp",
+  "version": "0.6.1",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@troodinc/mcp",
+      "version": "0.6.1",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}
