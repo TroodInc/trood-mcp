@@ -18,7 +18,7 @@ Trood takes care of the environment around your code while Claude writes it: put
 
 ## Data and the services it talks to
 
-- **Trood** (platform.trood.com, identity.trood.com and Trood's API servers): your Trood projects, company context and offers, only after you sign in, and usage analytics only after you say yes. Accounts and their data are kept while the account exists.
+- **Trood** (platform.trood.com, identity.trood.com and Trood's API servers): your Trood projects, company context and offers, only after you sign in, and usage analytics only after you say yes. How Trood keeps data is in its privacy policy: https://trood.com/privacy_policy.
 - **Trello** (api.trello.com), only if you connect a decision board, with a token saved on your computer.
 - **Telegram** (api.telegram.org), only if you set up the squad, with a bot token saved on your computer.
 - **Company websites** you ask it to research, read like a browser would. Facts are about companies, never about people, and contact details are removed.
