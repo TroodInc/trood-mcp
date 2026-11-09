@@ -8,7 +8,12 @@
     "email": "info@trood.com",
     "url": "https://trood.com"
   },
-  "homepage": "https://trood.com",
+  "homepage": "https://trood.com/mcp",
+  "repository": "https://github.com/TroodInc/trood-mcp",
+  "documentationUrl": "https://github.com/TroodInc/trood-mcp#readme",
+  "supportUrl": "https://github.com/TroodInc/trood-mcp/issues",
+  "privacyPolicyUrl": "https://trood.com/privacy_policy",
+  "termsOfServiceUrl": "https://trood.com/user_agreement",
   "license": "Apache-2.0",
   "keywords": [
     "deploy",
