@@ -16,6 +16,14 @@ Trood takes care of the environment around your code while Claude writes it: put
 - `/trood:squad` sets up a small team of scheduled agents that report in your own Telegram group.
 - A skill that routes questions about launching, hosting, secrets, domains and technology choices to Trood.
 
+## Data and the services it talks to
+
+- **Trood** (platform.trood.com, identity.trood.com and Trood's API servers): your Trood projects, company context and offers, only after you sign in, and usage analytics only after you say yes. Accounts and their data are kept while the account exists.
+- **Trello** (api.trello.com), only if you connect a decision board, with a token saved on your computer.
+- **Telegram** (api.telegram.org), only if you set up the squad, with a bot token saved on your computer.
+- **Company websites** you ask it to research, read like a browser would. Facts are about companies, never about people, and contact details are removed.
+- **GitHub, Vercel and Railway**, through your own accounts and their command-line tools, when you launch a project.
+
 The plugin runs the Trood MCP server (`@troodinc/mcp`, Apache-2.0). Trood pays for no model calls, and your credentials and research stay on your computer. Signing in is optional: you approve the computer on platform.trood.com, nobody types a password into a chat, and a connected tool can never pay, approve, invite people or send anything for you.
 
 Source: https://github.com/TroodInc/trood-mcp. Website: https://trood.com/mcp.
