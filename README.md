@@ -1,6 +1,6 @@
 # Trood MCP
 
-Version 0.4. Licensed under the Apache License 2.0 (see LICENSE).
+Version 0.6. Licensed under the Apache License 2.0 (see LICENSE).
 
 Trood for your coding agent. The agent writes the code; Trood takes care of the environment around it and of the people: putting a project online (GitHub, Vercel, Railway), secrets, domains, the systems a business runs, choosing technologies, and finding help. Help adapts per area, from a guided walkthrough for beginners to facts only for pros, and it never repeats an offer you turned down.
 
